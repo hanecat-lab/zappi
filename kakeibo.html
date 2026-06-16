@@ -705,7 +705,7 @@ function App() {
         </div>
         <div style={{ background:"rgba(255,255,255,0.10)",borderRadius:16,padding:"16px",border:"1px solid rgba(255,255,255,0.15)" }}>
           <div style={{ fontSize:11,color:"#90B8F0",marginBottom:4 }}>今月の残り</div>
-          <div style={{ fontSize:34,fontWeight:700,color:hideNums?"#90B8F0":balColor,letterSpacing:"-0.02em" }}>{maskY(yen(balance))}</div>
+          <div style={{ fontSize:34,fontWeight:700,color:hideNums?"#90B8F0":"#fff",letterSpacing:"-0.02em" }}>{maskY(yen(balance))}</div>
           <div style={{ display:"flex",justifyContent:"space-between",fontSize:11,color:"rgba(255,255,255,0.55)",marginTop:8 }}>
             <span>収入 {maskY(yen(income))}</span>
             <span>支出 {maskY(yen(totalOut))}</span>
