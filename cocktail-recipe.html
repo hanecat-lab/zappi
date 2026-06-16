@@ -140,7 +140,8 @@
   const { useState, useMemo, useEffect, useRef } = React;
 
   const DEFAULT_CATS = ['カクテル','ソフトドリンク','フルーツドリンク','ティー','スムージー','スパークリング','その他'];
-  const CAT_ICON = {'カクテル':'🍸','ソフトドリンク':'🥤','フルーツドリンク':'🍹','ティー':'🍵','スムージー':'🥛','スパークリング':'🥂','その他':'🍶'};
+  const CAT_ICON = {'カクテル':'🍸','ソフトドリンク':'🥤','フルーツドリンク':'🍹','ティー':'🍵','スムージー':'🥛','スパークリング':'🥂','日本酒':'🍶','焼酎':'🍶','その他':'🍹'};
+  const DRINK_ICONS = ['🍸','🥤','🍹','🍵','🥛','🥂','🍶','🍺','🍻','🍷','🥃','🧃','🧋','🧉','☕','🍾','🫖'];
   const FLAVOR_TAGS = ['甘い','辛口','ほろ苦','あっさり','さっぱり','濃厚','フルーティ','クリーミー','スパーク糳','ハーブ系'];
 
   const SAMPLE = [
@@ -331,7 +332,7 @@
   function RecipeGrid({recipes,onSelect}){
     return(<div className="recipe-grid">{recipes.map(r=>(
       <div key={r.id} className="recipe-card" onClick={()=>onSelect(r)}>
-        <div className="recipe-emoji">{CAT_ICON[r.category]||'🍹'}</div>
+        <div className="recipe-emoji">{r.icon||CAT_ICON[r.category]||'🍹'}</div>
         <div className="recipe-name">{r.name}</div>
         <div className="recipe-badge">{r.category}</div>
         <div className="recipe-ing-preview">{r.ingredients.filter(i=>i.name).slice(0,2).map(i=>i.name).join(' · ')}{r.ingredients.filter(i=>i.name).length>2?' ...':''}</div>
@@ -363,7 +364,7 @@
             <button onClick={onClose} style={{width:32,height:32,borderRadius:'50%',background:'#fff0f5',border:'1.5px solid #ffc0d8',color:'#ff6b9d',fontSize:20,fontWeight:'bold',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>×</button>
           </div>
           <div className="sheet-hero">
-            <div className="hero-emoji">{CAT_ICON[recipe.category]||'🍹'}</div>
+            <div className="hero-emoji">{recipe.icon||CAT_ICON[recipe.category]||'🍹'}</div>
             <div className="hero-name">{recipe.name}</div>
             <div className="hero-tags">
               <span className="hero-tag">{recipe.category}</span>
@@ -385,10 +386,23 @@
     );
   }
 
+  function IconPicker({icon,setIcon}){
+    return(
+      <div className="form-sec">
+        <label className="form-label">🎨 アイコン<span style={{fontSize:11,color:'#c090a8',marginLeft:6}}>（未選択はカテゴリ既定）</span></label>
+        <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+          {DRINK_ICONS.map(e=>(<button key={e} onClick={()=>setIcon(icon===e?'':e)} style={{width:40,height:40,fontSize:22,borderRadius:10,border:`2px solid ${icon===e?'#ff6b9d':'#ffc0d8'}`,background:icon===e?'#fff0f5':'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',transition:'all .15s'}}>{e}</button>))}
+        </div>
+        {icon&&<div style={{marginTop:6,fontSize:12,color:'#c090a8'}}>選択中: <span style={{fontSize:18}}>{icon}</span> <button onClick={()=>setIcon('')} style={{background:'none',border:'none',color:'#ff85b3',cursor:'pointer',fontSize:12,textDecoration:'underline'}}>解除</button></div>}
+      </div>
+    );
+  }
+
   function AddTab({onAdd,categories}){
     const blank={name:'',ml:'',ratio:''};
     const [name,setName]=useState('');
     const [category,setCategory]=useState(categories[0]||'カクテル');
+    const [icon,setIcon]=useState('');
     const [glass,setGlass]=useState('');
     const [ings,setIngs]=useState([{...blank},{...blank}]);
     const [steps,setSteps]=useState(['','']);
@@ -399,12 +413,12 @@
     const updStep=(i,v)=>setSteps(p=>p.map((x,j)=>j===i?v:x));
     const delStep=(i)=>setSteps(p=>p.filter((_,j)=>j!==i));
     const toggleTag=(t)=>setTags(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
-    const reset=()=>{setName('');setCategory('カクテル');setGlass('');setIngs([{...blank},{...blank}]);setSteps(['','']);setTags([]);setNotes('');};
+    const reset=()=>{setName('');setCategory(categories[0]||'カクテル');setIcon('');setGlass('');setIngs([{...blank},{...blank}]);setSteps(['','']);setTags([]);setNotes('');};
     const submit=()=>{
       if(!name.trim()){alert('ドリンク名を入力してね！');return;}
       const vi=ings.filter(i=>i.name.trim());
       if(vi.length===0){alert('材料を1つ以上入力してね！');return;}
-      onAdd({name:name.trim(),category,glass:glass.trim(),tags,ingredients:vi.map(i=>({name:i.name.trim(),ml:Number(i.ml)||0,ratio:Number(i.ratio)||0})),steps:steps.filter(s=>s.trim()),notes:notes.trim()});
+      onAdd({name:name.trim(),category,icon,glass:glass.trim(),tags,ingredients:vi.map(i=>({name:i.name.trim(),ml:Number(i.ml)||0,ratio:Number(i.ratio)||0})),steps:steps.filter(s=>s.trim()),notes:notes.trim()});
       reset();
     };
     return(
@@ -412,6 +426,7 @@
         <div className="form-title">✨ 新しいレシピを登録</div>
         <div className="form-sec"><label className="form-label">🍹 ドリンク名 *</label><input className="f-input" placeholder="例: ストロベリーソーダ" value={name} onChange={e=>setName(e.target.value)} /></div>
         <div className="form-sec"><label className="form-label">🏷️ カテゴリ</label><select className="f-input f-select" value={category} onChange={e=>setCategory(e.target.value)}>{categories.map(c=>(<option key={c} value={c}>{CAT_ICON[c]||'🍹'} {c}</option>))}</select></div>
+        <IconPicker icon={icon} setIcon={setIcon}/>
         <div className="form-sec"><label className="form-label">🥃 グラスの種類</label><input className="f-input" placeholder="例: タンブラー、マグカップ" value={glass} onChange={e=>setGlass(e.target.value)} /></div>
         <div className="form-sec">
           <label className="form-label">🌸 材料</label>
@@ -525,6 +540,7 @@
     const blank={name:'',ml:'',ratio:''};
     const [name,setName]=useState(recipe.name);
     const [category,setCategory]=useState(recipe.category);
+    const [icon,setIcon]=useState(recipe.icon||'');
     const [glass,setGlass]=useState(recipe.glass||'');
     const [ings,setIngs]=useState(recipe.ingredients.length>0?recipe.ingredients.map(i=>({name:i.name,ml:i.ml||'',ratio:i.ratio||''})):[{...blank},{...blank}]);
     const [steps,setSteps]=useState(recipe.steps.length>0?[...recipe.steps]:['']);
@@ -539,7 +555,7 @@
       if(!name.trim()){alert('ドリンク名を入力してね！');return;}
       const vi=ings.filter(i=>i.name.trim());
       if(vi.length===0){alert('材料を1つ以上入力してね！');return;}
-      onUpdate(recipe.id,{name:name.trim(),category,glass:glass.trim(),tags,ingredients:vi.map(i=>({name:i.name.trim(),ml:Number(i.ml)||0,ratio:Number(i.ratio)||0})),steps:steps.filter(s=>s.trim()),notes:notes.trim()});
+      onUpdate(recipe.id,{name:name.trim(),category,icon,glass:glass.trim(),tags,ingredients:vi.map(i=>({name:i.name.trim(),ml:Number(i.ml)||0,ratio:Number(i.ratio)||0})),steps:steps.filter(s=>s.trim()),notes:notes.trim()});
     };
     return(
       <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
@@ -552,6 +568,7 @@
           <div className="form-title" style={{marginTop:18}}>✏️ レシピを編集</div>
           <div className="form-sec"><label className="form-label">🍹 ドリンク名 *</label><input className="f-input" value={name} onChange={e=>setName(e.target.value)}/></div>
           <div className="form-sec"><label className="form-label">🏷️ カテゴリ</label><select className="f-input f-select" value={category} onChange={e=>setCategory(e.target.value)}>{categories.map(c=>(<option key={c} value={c}>{CAT_ICON[c]||'🍹'} {c}</option>))}</select></div>
+          <IconPicker icon={icon} setIcon={setIcon}/>
           <div className="form-sec"><label className="form-label">🥃 グラスの種類</label><input className="f-input" placeholder="例: タンブラー、マグカップ" value={glass} onChange={e=>setGlass(e.target.value)}/></div>
           <div className="form-sec">
             <label className="form-label">🌸 材料</label>
