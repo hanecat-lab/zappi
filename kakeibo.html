@@ -22,7 +22,7 @@
 </head>
 <body>
 <div id="root"></div>
-<!-- v5 -->
+<!-- v6 -->
 <script type="text/babel">
 const { useState, useMemo, useEffect, useRef } = React;
 
@@ -91,6 +91,47 @@ function todayStr() {
 const yen = n => "¥" + Number(Math.round(n)).toLocaleString("ja-JP");
 const lsGet = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
 const lsSet = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+function DayPicker({ day, maxDay, monthNum, onChange }) {
+  const itemH = 40;
+  const containerH = 120;
+  const padH = (containerH - itemH) / 2;
+  const scrollRef = useRef(null);
+  const timer = useRef(null);
+  const cbRef = useRef(onChange);
+  useEffect(() => { cbRef.current = onChange; });
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = (day - 1) * itemH;
+    }
+  }, []);
+
+  function handleScroll(e) {
+    clearTimeout(timer.current);
+    const st = e.target.scrollTop;
+    timer.current = setTimeout(() => {
+      const d = Math.max(1, Math.min(maxDay, Math.round(st / itemH) + 1));
+      cbRef.current(d);
+    }, 80);
+  }
+
+  return (
+    <div style={{ position:"relative",height:containerH,borderRadius:10,border:"1px solid #D0D8D0",overflow:"hidden",background:"#fff" }}>
+      <div style={{ position:"absolute",top:0,left:0,right:0,height:padH,background:"linear-gradient(to bottom, rgba(255,255,255,0.95) 50%, transparent)",pointerEvents:"none",zIndex:2 }} />
+      <div style={{ position:"absolute",bottom:0,left:0,right:0,height:padH,background:"linear-gradient(to top, rgba(255,255,255,0.95) 50%, transparent)",pointerEvents:"none",zIndex:2 }} />
+      <div style={{ position:"absolute",top:padH,left:0,right:0,height:itemH,borderTop:"1.5px solid #B0D8B0",borderBottom:"1.5px solid #B0D8B0",pointerEvents:"none",zIndex:1 }} />
+      <div style={{ position:"absolute",right:8,top:padH,height:itemH,display:"flex",alignItems:"center",fontSize:11,color:"#90A890",fontWeight:600,pointerEvents:"none",zIndex:3 }}>{monthNum}月</div>
+      <div ref={scrollRef} onScroll={handleScroll} style={{ position:"absolute",inset:0,overflowY:"scroll",scrollSnapType:"y mandatory" }}>
+        <div style={{ height:padH }} />
+        {Array.from({ length:maxDay }, (_,i) => i+1).map(d => (
+          <div key={d} style={{ height:itemH,display:"flex",alignItems:"center",justifyContent:"center",scrollSnapAlign:"center",fontSize:18,fontWeight:600,color:"#1E2820" }}>{d}</div>
+        ))}
+        <div style={{ height:padH }} />
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const [page, setPage]           = useState("home");
@@ -472,6 +513,11 @@ function App() {
       const idx = expCats.findIndex(c => c.id === id);
       return ["#4A7A60","#6060A0","#9A6030","#607060"][idx] || "#607060";
     };
+    const m2 = current.month.match(/(\d+)年(\d+)月/) || [];
+    const expYear = Number(m2[1]) || new Date().getFullYear();
+    const expMonthNum = Number(m2[2]) || (new Date().getMonth() + 1);
+    const expMonthDays = new Date(expYear, expMonthNum, 0).getDate();
+    const expDay = parseInt((newExp.date || "").split("/")[1]) || new Date().getDate();
     return (
       <div style={{ minHeight:"100vh", background:"#F0F4F0", paddingBottom:100 }}>
         <SubHeader title="出費管理" sub="EXPENSES" />
@@ -566,15 +612,14 @@ function App() {
             <div style={{ background:"#F0F4F0",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",width:"100%",maxWidth:480,margin:"0 auto" }}>
               <div style={{ fontSize:15,fontWeight:700,marginBottom:16 }}>出費を追加</div>
               <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
-                <div style={{ display:"flex", gap:10 }}>
-                  <div style={{ width:80 }}>
-                    <label style={{ fontSize:11,color:"#607860" }}>日付</label>
-                    <input value={newExp.date} onChange={e=>setNewExp(x=>({...x,date:e.target.value}))} style={{...inp,textAlign:"center"}} placeholder="6/16" />
-                  </div>
-                  <div style={{ flex:1 }}>
-                    <label style={{ fontSize:11,color:"#607860" }}>使ったもの</label>
-                    <input value={newExp.name} onChange={e=>setNewExp(x=>({...x,name:e.target.value}))} style={inp} placeholder="コンビニ、ランチ…" />
-                  </div>
+                <div>
+                  <label style={{ fontSize:11,color:"#607860" }}>使ったもの</label>
+                  <input value={newExp.name} onChange={e=>setNewExp(x=>({...x,name:e.target.value}))} style={inp} placeholder="コンビニ、ランチ…" />
+                </div>
+                <div>
+                  <label style={{ fontSize:11,color:"#607860",display:"block",marginBottom:4 }}>日付</label>
+                  <DayPicker day={expDay} maxDay={expMonthDays} monthNum={expMonthNum}
+                    onChange={d => setNewExp(x => ({...x,date:`${expMonthNum}/${d}`}))} />
                 </div>
                 <div>
                   <label style={{ fontSize:11,color:"#607860" }}>金額</label>
