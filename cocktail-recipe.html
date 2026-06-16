@@ -256,7 +256,7 @@
       if(!q)return true;
       const lq=q.toLowerCase();
       return r.name.toLowerCase().includes(lq)||r.category.toLowerCase().includes(lq)||(r.notes&&r.notes.toLowerCase().includes(lq))||(r.tags&&r.tags.some(t=>t.toLowerCase().includes(lq)))||r.ingredients.some(i=>i.name.toLowerCase().includes(lq))||r.steps.some(s=>s.toLowerCase().includes(lq));
-    }),[recipes,q,cat,flavorTag]);
+    }).sort((a,b)=>a.name.localeCompare(b.name,'ja')),[recipes,q,cat,flavorTag]);
     const addRecipe=(r)=>{setRecipes(p=>[{...r,id:Date.now().toString()},...p]);showToast('✨ レシピを登録しました！');setTab('search');};
     const deleteRecipe=(id)=>{setRecipes(p=>p.filter(r=>r.id!==id));setDetail(null);showToast('🗑️ レシピを削除しました');};
     const updateRecipe=(id,data)=>{setRecipes(p=>p.map(r=>r.id===id?{...data,id}:r));setEditTarget(null);setDetail(null);showToast('✏️ レシピを更新しました！');};
@@ -301,10 +301,11 @@
     const [cat,setCat]=useState('すべて');
     const knownOrder=allCats.slice(1);
     const groups=useMemo(()=>{
-      if(cat!=='すべて'){const items=recipes.filter(r=>r.category===cat);return items.length?[{cat,items}]:[];}
+      const sort=arr=>[...arr].sort((a,b)=>a.name.localeCompare(b.name,'ja'));
+      if(cat!=='すべて'){const items=sort(recipes.filter(r=>r.category===cat));return items.length?[{cat,items}]:[];}
       const seen=new Set();
       const ordered=[...knownOrder,...[...new Set(recipes.map(r=>r.category))].filter(c=>!knownOrder.includes(c))];
-      return ordered.map(c=>{if(seen.has(c))return null;seen.add(c);const items=recipes.filter(r=>r.category===c);return items.length?{cat:c,items}:null;}).filter(Boolean);
+      return ordered.map(c=>{if(seen.has(c))return null;seen.add(c);const items=sort(recipes.filter(r=>r.category===c));return items.length?{cat:c,items}:null;}).filter(Boolean);
     },[recipes,cat,knownOrder]);
     return(
       <>
