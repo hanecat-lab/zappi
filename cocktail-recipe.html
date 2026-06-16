@@ -441,6 +441,7 @@
           {ings.map((ing,i)=>(<div key={i} className="ing-row"><input className="f-input" placeholder="材料名" value={ing.name} onChange={e=>updIng(i,'name',e.target.value)} enterKeyHint="done" onKeyDown={e=>e.key==='Enter'&&e.target.blur()}/><input className="f-input" type="number" placeholder="ml" value={ing.ml} onChange={e=>updIng(i,'ml',e.target.value)} enterKeyHint="done" onKeyDown={e=>e.key==='Enter'&&e.target.blur()}/><input className="f-input" type="number" step="0.1" placeholder="比率" value={ing.ratio} onChange={e=>updIng(i,'ratio',e.target.value)} enterKeyHint="done" onKeyDown={e=>e.key==='Enter'&&e.target.blur()}/><button className="del-btn" onClick={()=>delIng(i)}>×</button></div>))}
           <div style={{fontSize:11,color:'#c090a8',marginTop:4,lineHeight:1.6}}>💡 比率を入力すると合計mlを変えたとき自動計算されます（例: 1と3 → 1:3の割合）</div>
           <button className="add-row-btn" onClick={()=>setIngs(p=>[...p,{...blank}])}>＋ 材料を追加</button>
+          {(()=>{const t=ings.reduce((s,i)=>s+(Number(i.ml)||0),0);return t>0&&<div style={{textAlign:'right',marginTop:8,fontSize:14,color:'#ff6b9d',fontWeight:'bold'}}>合計 約{t}ml</div>;})()}
         </div>
         <div className="form-sec">
           <label className="form-label">✨ 作り方（手順）</label>
@@ -584,6 +585,7 @@
             {ings.map((ing,i)=>(<div key={i} className="ing-row"><input className="f-input" placeholder="材料名" value={ing.name} onChange={e=>updIng(i,'name',e.target.value)} enterKeyHint="done" onKeyDown={e=>e.key==='Enter'&&e.target.blur()}/><input className="f-input" type="number" placeholder="ml" value={ing.ml} onChange={e=>updIng(i,'ml',e.target.value)} enterKeyHint="done" onKeyDown={e=>e.key==='Enter'&&e.target.blur()}/><input className="f-input" type="number" step="0.1" placeholder="比率" value={ing.ratio} onChange={e=>updIng(i,'ratio',e.target.value)} enterKeyHint="done" onKeyDown={e=>e.key==='Enter'&&e.target.blur()}/><button className="del-btn" onClick={()=>delIng(i)}>×</button></div>))}
             <div style={{fontSize:11,color:'#c090a8',marginTop:4,lineHeight:1.6}}>💡 比率を入力すると合計mlを変えたとき自動計算されます（例: 1と3 → 1:3の割合）</div>
             <button className="add-row-btn" onClick={()=>setIngs(p=>[...p,{...blank}])}>＋ 材料を追加</button>
+            {(()=>{const t=ings.reduce((s,i)=>s+(Number(i.ml)||0),0);return t>0&&<div style={{textAlign:'right',marginTop:8,fontSize:14,color:'#ff6b9d',fontWeight:'bold'}}>合計 約{t}ml</div>;})()}
           </div>
           <div className="form-sec">
             <label className="form-label">✨ 作り方（手順）</label>
