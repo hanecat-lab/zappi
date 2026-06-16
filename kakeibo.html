@@ -14,7 +14,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body { background: #F0F4F0; font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; color: #1E2820; }
+    body { background: #EEF3FF; font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; color: #1A2840; }
     input, select, button { font-family: inherit; }
     input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
     ::-webkit-scrollbar { display: none; }
@@ -22,7 +22,7 @@
 </head>
 <body>
 <div id="root"></div>
-<!-- v8 -->
+<!-- v9 -->
 <script type="text/babel">
 const { useState, useMemo, useEffect, useRef } = React;
 
@@ -117,15 +117,15 @@ function DayPicker({ day, maxDay, monthNum, onChange }) {
   }
 
   return (
-    <div style={{ position:"relative",height:containerH,borderRadius:10,border:"1px solid #D0D8D0",overflow:"hidden",background:"#fff" }}>
+    <div style={{ position:"relative",height:containerH,borderRadius:10,border:"1px solid #C5D5EE",overflow:"hidden",background:"#fff" }}>
       <div style={{ position:"absolute",top:0,left:0,right:0,height:padH,background:"linear-gradient(to bottom, rgba(255,255,255,0.95) 50%, transparent)",pointerEvents:"none",zIndex:2 }} />
       <div style={{ position:"absolute",bottom:0,left:0,right:0,height:padH,background:"linear-gradient(to top, rgba(255,255,255,0.95) 50%, transparent)",pointerEvents:"none",zIndex:2 }} />
-      <div style={{ position:"absolute",top:padH,left:0,right:0,height:itemH,borderTop:"1.5px solid #B0D8B0",borderBottom:"1.5px solid #B0D8B0",pointerEvents:"none",zIndex:1 }} />
-      <div style={{ position:"absolute",right:8,top:padH,height:itemH,display:"flex",alignItems:"center",fontSize:11,color:"#90A890",fontWeight:600,pointerEvents:"none",zIndex:3 }}>{monthNum}月</div>
+      <div style={{ position:"absolute",top:padH,left:0,right:0,height:itemH,borderTop:"1.5px solid #B0C4F0",borderBottom:"1.5px solid #B0C4F0",pointerEvents:"none",zIndex:1 }} />
+      <div style={{ position:"absolute",right:8,top:padH,height:itemH,display:"flex",alignItems:"center",fontSize:11,color:"#88A8CC",fontWeight:600,pointerEvents:"none",zIndex:3 }}>{monthNum}月</div>
       <div ref={scrollRef} onScroll={handleScroll} style={{ position:"absolute",inset:0,overflowY:"scroll",scrollSnapType:"y mandatory" }}>
         <div style={{ height:padH }} />
         {Array.from({ length:maxDay }, (_,i) => i+1).map(d => (
-          <div key={d} style={{ height:itemH,display:"flex",alignItems:"center",justifyContent:"center",scrollSnapAlign:"center",fontSize:18,fontWeight:600,color:"#1E2820" }}>{d}</div>
+          <div key={d} style={{ height:itemH,display:"flex",alignItems:"center",justifyContent:"center",scrollSnapAlign:"center",fontSize:18,fontWeight:600,color:"#1A2840" }}>{d}</div>
         ))}
         <div style={{ height:padH }} />
       </div>
@@ -196,7 +196,7 @@ function App() {
   const totalOut      = fixedTotal + varTotal + nhkVal + occTotal + cashExpTotal;
   const income        = Number(current.income) || 0;
   const balance       = income - totalOut;
-  const balColor      = balance < 0 ? "#C84040" : balance < 20000 ? "#D4901A" : "#3A7A4A";
+  const balColor      = balance < 0 ? "#C84040" : balance < 20000 ? "#D4901A" : "#2A7A5A";
 
   function closeMonth() {
     const rec = {
@@ -334,30 +334,35 @@ function App() {
 
   const inp = {
     width:"100%", padding:"11px 13px", marginTop:5,
-    background:"#fff", border:"1px solid #D0D8D0",
-    borderRadius:10, fontSize:15, color:"#1E2820", outline:"none"
+    background:"#fff", border:"1px solid #C5D5EE",
+    borderRadius:10, fontSize:15, color:"#1A2840", outline:"none"
+  };
+
+  const card = {
+    background:"#fff", borderRadius:16, padding:"16px",
+    boxShadow:"0 2px 10px rgba(30,60,180,0.07)", border:"1px solid #DDE8F8"
   };
 
   const maskY = v => hideNums ? "¥----" : v;
 
   const NavBtn = ({ label, onClick }) => (
-    <button onClick={onClick} style={{ background:"#2E4838", border:"none", borderRadius:8, padding:"6px 10px", color:"#90B890", fontSize:11, cursor:"pointer" }}>{label}</button>
+    <button onClick={onClick} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:8, padding:"6px 10px", color:"#C8DEFF", fontSize:11, cursor:"pointer" }}>{label}</button>
   );
 
   const SubHeader = ({ title, sub }) => (
     <div style={{
-      background:"#1E3828", color:"#F0F4F0",
+      background:"linear-gradient(135deg, #1C3561 0%, #2A4890 100%)", color:"#F0F5FF",
       padding:"16px 20px 18px",
       paddingTop:"max(env(safe-area-inset-top),16px)",
       position:"sticky", top:0, zIndex:100
     }}>
       <div style={{ display:"flex", alignItems:"center", gap:12 }}>
         <button onClick={() => setPage("home")} style={{
-          background:"#2E4838", border:"none", borderRadius:8,
-          padding:"6px 12px", color:"#90B890", fontSize:13, cursor:"pointer"
+          background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8,
+          padding:"6px 12px", color:"#D8EEFF", fontSize:13, cursor:"pointer"
         }}>← 戻る</button>
         <div>
-          <div style={{ fontSize:10, letterSpacing:"0.15em", color:"#607860" }}>{sub}</div>
+          <div style={{ fontSize:10, letterSpacing:"0.15em", color:"#7AAAE0" }}>{sub}</div>
           <div style={{ fontSize:20, fontWeight:700 }}>{title}</div>
         </div>
       </div>
@@ -368,24 +373,24 @@ function App() {
   if (page === "history") {
     const maxBal = Math.max(...history.map(h => Math.abs(h.balance)), 1);
     return (
-      <div style={{ minHeight:"100vh", background:"#F0F4F0", paddingBottom:40 }}>
+      <div style={{ minHeight:"100vh", background:"#EEF3FF", paddingBottom:40 }}>
         <SubHeader title="月別履歴" sub="HISTORY" />
         <div style={{ maxWidth:480, margin:"0 auto", padding:"16px" }}>
           {history.length === 0 ? (
-            <div style={{ background:"#fff", borderRadius:14, padding:"40px 16px", textAlign:"center", color:"#90A890", fontSize:14 }}>まだ締めた月がありません</div>
+            <div style={{ ...card, padding:"40px 16px", textAlign:"center", color:"#88A8CC", fontSize:14 }}>まだ締めた月がありません</div>
           ) : (
             <>
-              <div style={{ background:"#fff", borderRadius:14, padding:"16px", marginBottom:16, boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
-                <div style={{ fontSize:11, color:"#607860", marginBottom:12, letterSpacing:"0.08em" }}>残高推移</div>
+              <div style={{ ...card, marginBottom:16 }}>
+                <div style={{ fontSize:11, color:"#7090B8", marginBottom:12, letterSpacing:"0.08em" }}>残高推移</div>
                 <div style={{ display:"flex", alignItems:"flex-end", gap:6, height:80 }}>
                   {[...history].reverse().slice(-6).map((h,i) => {
                     const pct = Math.abs(h.balance)/maxBal;
                     const isNeg = h.balance < 0;
                     return (
                       <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
-                        <div style={{ fontSize:9, color:isNeg?"#C84040":"#3A7A4A", fontWeight:600 }}>{hideNums?"-":(isNeg?"-":"+")+Math.abs(Math.round(h.balance/1000))+"k"}</div>
-                        <div style={{ width:"100%", borderRadius:4, height:Math.max(pct*60,4), background:isNeg?"#E8A0A0":"#80C890" }} />
-                        <div style={{ fontSize:9, color:"#90A890" }}>{h.month.replace(/\d{4}年/,"").replace("月","")}月</div>
+                        <div style={{ fontSize:9, color:isNeg?"#C84040":"#3060B0", fontWeight:600 }}>{hideNums?"-":(isNeg?"-":"+")+Math.abs(Math.round(h.balance/1000))+"k"}</div>
+                        <div style={{ width:"100%", borderRadius:4, height:Math.max(pct*60,4), background:isNeg?"#E8A0A0":"#6090E0" }} />
+                        <div style={{ fontSize:9, color:"#88A8CC" }}>{h.month.replace(/\d{4}年/,"").replace("月","")}月</div>
                       </div>
                     );
                   })}
@@ -393,18 +398,18 @@ function App() {
               </div>
               <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                 {history.map((h,i) => (
-                  <div key={i} style={{ background:"#fff", borderRadius:14, padding:"16px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
+                  <div key={i} style={{ ...card }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:10 }}>
                       <span style={{ fontSize:16, fontWeight:700 }}>{h.month}</span>
-                      <span style={{ fontSize:18, fontWeight:700, color:h.balance<0?"#C84040":"#3A7A4A" }}>{maskY(yen(h.balance))}</span>
+                      <span style={{ fontSize:18, fontWeight:700, color:h.balance<0?"#C84040":"#2A7A5A" }}>{maskY(yen(h.balance))}</span>
                     </div>
-                    <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"#708870" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"#5070A0" }}>
                       <span>手取 {maskY(yen(h.income))}</span>
                       <span>支出 {maskY(yen(h.totalOut))}</span>
                     </div>
-                    {h.cashExpTotal > 0 && <div style={{ marginTop:4, fontSize:11, color:"#90A890" }}>現金支出 {maskY(yen(h.cashExpTotal))} / CR {maskY(yen(h.creditExpTotal||0))}</div>}
+                    {h.cashExpTotal > 0 && <div style={{ marginTop:4, fontSize:11, color:"#88A8CC" }}>現金支出 {maskY(yen(h.cashExpTotal))} / CR {maskY(yen(h.creditExpTotal||0))}</div>}
                     {h.occasionals && h.occasionals.length > 0 && (
-                      <div style={{ marginTop:4, fontSize:11, color:"#90A890" }}>不定期: {h.occasionals.map(o=>o.name).join("・")}</div>
+                      <div style={{ marginTop:4, fontSize:11, color:"#88A8CC" }}>不定期: {h.occasionals.map(o=>o.name).join("・")}</div>
                     )}
                   </div>
                 ))}
@@ -419,12 +424,12 @@ function App() {
   // ===== 固定支出編集 =====
   if (page === "fixed") {
     return (
-      <div style={{ minHeight:"100vh", background:"#F0F4F0", paddingBottom:40 }}>
+      <div style={{ minHeight:"100vh", background:"#EEF3FF", paddingBottom:40 }}>
         <SubHeader title="固定支出を編集" sub="SETTINGS" />
         <div style={{ maxWidth:480, margin:"0 auto", padding:"16px" }}>
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
             {fixed.map(f => (
-              <div key={f.id} style={{ background:"#fff", borderRadius:12, padding:"14px 16px" }}>
+              <div key={f.id} style={{ background:"#fff", borderRadius:14, padding:"14px 16px", border:"1px solid #DDE8F8", boxShadow:"0 1px 6px rgba(30,60,180,0.06)" }}>
                 {editFixed===f.id ? (
                   <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                     <input value={f.name} onChange={e=>updateFixed(f.id,"name",e.target.value)} style={{...inp,marginTop:0}} placeholder="項目名" />
@@ -432,24 +437,24 @@ function App() {
                     <input value={f.day} onChange={e=>updateFixed(f.id,"day",e.target.value)} style={{...inp,marginTop:0}} placeholder="引落日" />
                     <div style={{ display:"flex", gap:8 }}>
                       <button onClick={()=>{setFixed(p=>p.filter(x=>x.id!==f.id));setEditFixed(null);}} style={{ flex:1,padding:"10px",background:"#FEF0F0",border:"none",borderRadius:10,color:"#C84040",fontSize:13,cursor:"pointer" }}>削除</button>
-                      <button onClick={()=>setEditFixed(null)} style={{ flex:2,padding:"10px",background:"#1E3828",border:"none",borderRadius:10,color:"#fff",fontSize:13,cursor:"pointer" }}>完了</button>
+                      <button onClick={()=>setEditFixed(null)} style={{ flex:2,padding:"10px",background:"#1C3561",border:"none",borderRadius:10,color:"#fff",fontSize:13,cursor:"pointer" }}>完了</button>
                     </div>
                   </div>
                 ) : (
                   <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                     <div style={{ flex:1 }}>
                       <div style={{ fontSize:14, fontWeight:600 }}>{f.name}</div>
-                      <div style={{ fontSize:11, color:"#90A890", marginTop:2 }}>{f.day}</div>
+                      <div style={{ fontSize:11, color:"#88A8CC", marginTop:2 }}>{f.day}</div>
                     </div>
                     <div style={{ fontWeight:700, fontSize:15 }}>{yen(f.amount)}</div>
-                    <button onClick={()=>setEditFixed(f.id)} style={{ background:"#EEF2EE",border:"none",borderRadius:8,width:30,height:30,cursor:"pointer",fontSize:14 }}>✏️</button>
+                    <button onClick={()=>setEditFixed(f.id)} style={{ background:"#EEF2FF",border:"none",borderRadius:8,width:30,height:30,cursor:"pointer",fontSize:14 }}>✏️</button>
                   </div>
                 )}
               </div>
             ))}
           </div>
-          <div style={{ marginTop:16,background:"#EEF2EE",borderRadius:12,padding:"14px 16px",textAlign:"center" }}>
-            <span style={{ fontSize:13,color:"#607860" }}>固定支出合計 </span>
+          <div style={{ marginTop:16,background:"#EEF2FF",borderRadius:14,padding:"14px 16px",textAlign:"center",border:"1px solid #DDE8F8" }}>
+            <span style={{ fontSize:13,color:"#4A6090" }}>固定支出合計 </span>
             <span style={{ fontSize:16,fontWeight:700 }}>{yen(fixedTotal)}</span>
           </div>
         </div>
@@ -460,13 +465,13 @@ function App() {
   // ===== 不定期支出マスター =====
   if (page === "occasional") {
     return (
-      <div style={{ minHeight:"100vh", background:"#F0F4F0", paddingBottom:40 }}>
+      <div style={{ minHeight:"100vh", background:"#EEF3FF", paddingBottom:40 }}>
         <SubHeader title="不定期支出" sub="OCCASIONAL" />
         <div style={{ maxWidth:480, margin:"0 auto", padding:"16px" }}>
-          <div style={{ fontSize:11,color:"#90A890",marginBottom:10,letterSpacing:"0.05em" }}>「今月＋」で当月の支出に追加できます</div>
+          <div style={{ fontSize:11,color:"#88A8CC",marginBottom:10,letterSpacing:"0.05em" }}>「今月＋」で当月の支出に追加できます</div>
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
             {occMaster.map(o => (
-              <div key={o.id} style={{ background:"#fff",borderRadius:12,padding:"14px 16px" }}>
+              <div key={o.id} style={{ background:"#fff",borderRadius:14,padding:"14px 16px",border:"1px solid #DDE8F8",boxShadow:"0 1px 6px rgba(30,60,180,0.06)" }}>
                 {editOcc===o.id ? (
                   <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                     <input value={o.name} onChange={e=>updateOccMaster(o.id,"name",e.target.value)} style={{...inp,marginTop:0}} placeholder="項目名" />
@@ -474,37 +479,37 @@ function App() {
                     <input value={o.note} onChange={e=>updateOccMaster(o.id,"note",e.target.value)} style={{...inp,marginTop:0}} placeholder="発生時期・メモ" />
                     <div style={{ display:"flex", gap:8 }}>
                       <button onClick={()=>{setOccMaster(p=>p.filter(x=>x.id!==o.id));setEditOcc(null);}} style={{ flex:1,padding:"10px",background:"#FEF0F0",border:"none",borderRadius:10,color:"#C84040",fontSize:13,cursor:"pointer" }}>削除</button>
-                      <button onClick={()=>setEditOcc(null)} style={{ flex:2,padding:"10px",background:"#1E3828",border:"none",borderRadius:10,color:"#fff",fontSize:13,cursor:"pointer" }}>完了</button>
+                      <button onClick={()=>setEditOcc(null)} style={{ flex:2,padding:"10px",background:"#1C3561",border:"none",borderRadius:10,color:"#fff",fontSize:13,cursor:"pointer" }}>完了</button>
                     </div>
                   </div>
                 ) : (
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                     <div style={{ flex:1 }}>
                       <div style={{ fontSize:14,fontWeight:600 }}>{o.name}</div>
-                      {o.note&&<div style={{ fontSize:11,color:"#90A890",marginTop:2 }}>{o.note}</div>}
+                      {o.note&&<div style={{ fontSize:11,color:"#88A8CC",marginTop:2 }}>{o.note}</div>}
                     </div>
-                    <div style={{ fontWeight:700,fontSize:14,color:"#1E2820" }}>{yen(o.amount)}</div>
-                    <button onClick={()=>{addToThisMonth(o);setPage("home");}} style={{ background:"#EEF8EE",border:"1px solid #B0D8B0",borderRadius:8,padding:"5px 9px",cursor:"pointer",fontSize:11,color:"#3A7A4A",fontWeight:700,whiteSpace:"nowrap" }}>今月＋</button>
-                    <button onClick={()=>setEditOcc(o.id)} style={{ background:"#EEF2EE",border:"none",borderRadius:8,width:30,height:30,cursor:"pointer",fontSize:14 }}>✏️</button>
+                    <div style={{ fontWeight:700,fontSize:14,color:"#1A2840" }}>{yen(o.amount)}</div>
+                    <button onClick={()=>{addToThisMonth(o);setPage("home");}} style={{ background:"#EEF4FF",border:"1px solid #B0C4F0",borderRadius:8,padding:"5px 9px",cursor:"pointer",fontSize:11,color:"#3B6FCC",fontWeight:700,whiteSpace:"nowrap" }}>今月＋</button>
+                    <button onClick={()=>setEditOcc(o.id)} style={{ background:"#EEF2FF",border:"none",borderRadius:8,width:30,height:30,cursor:"pointer",fontSize:14 }}>✏️</button>
                   </div>
                 )}
               </div>
             ))}
           </div>
-          <button onClick={()=>setShowAddOcc(true)} style={{ marginTop:12,width:"100%",padding:"13px",background:"transparent",border:"2px dashed #B0C8B0",borderRadius:12,color:"#3A7A4A",fontSize:14,cursor:"pointer",fontWeight:600 }}>＋ 項目を追加</button>
+          <button onClick={()=>setShowAddOcc(true)} style={{ marginTop:12,width:"100%",padding:"13px",background:"transparent",border:"2px dashed #A8C0EC",borderRadius:14,color:"#3B6FCC",fontSize:14,cursor:"pointer",fontWeight:600 }}>＋ 項目を追加</button>
         </div>
         {showAddOcc&&(
           <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:300,display:"flex",alignItems:"flex-end" }} onClick={e=>e.target===e.currentTarget&&setShowAddOcc(false)}>
-            <div style={{ background:"#F0F4F0",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",width:"100%",maxWidth:480,margin:"0 auto" }}>
+            <div style={{ background:"#F5F9FF",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",width:"100%",maxWidth:480,margin:"0 auto" }}>
               <div style={{ fontSize:15,fontWeight:700,marginBottom:16 }}>不定期支出を登録</div>
               <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
-                <div><label style={{ fontSize:11,color:"#607860" }}>項目名</label><input value={newOcc.name} onChange={e=>setNewOcc(o=>({...o,name:e.target.value}))} style={inp} placeholder="自動車税、オイル交換…" /></div>
-                <div><label style={{ fontSize:11,color:"#607860" }}>金額</label><input type="number" value={newOcc.amount} onChange={e=>setNewOcc(o=>({...o,amount:e.target.value}))} onFocus={e=>e.target.select()} style={inp} inputMode="numeric" placeholder="0" /></div>
-                <div><label style={{ fontSize:11,color:"#607860" }}>発生時期・メモ</label><input value={newOcc.note} onChange={e=>setNewOcc(o=>({...o,note:e.target.value}))} style={inp} placeholder="5月、不定期…" /></div>
+                <div><label style={{ fontSize:11,color:"#4A6090" }}>項目名</label><input value={newOcc.name} onChange={e=>setNewOcc(o=>({...o,name:e.target.value}))} style={inp} placeholder="自動車税、オイル交換…" /></div>
+                <div><label style={{ fontSize:11,color:"#4A6090" }}>金額</label><input type="number" value={newOcc.amount} onChange={e=>setNewOcc(o=>({...o,amount:e.target.value}))} onFocus={e=>e.target.select()} style={inp} inputMode="numeric" placeholder="0" /></div>
+                <div><label style={{ fontSize:11,color:"#4A6090" }}>発生時期・メモ</label><input value={newOcc.note} onChange={e=>setNewOcc(o=>({...o,note:e.target.value}))} style={inp} placeholder="5月、不定期…" /></div>
               </div>
               <div style={{ display:"flex",gap:10,marginTop:20 }}>
-                <button onClick={()=>setShowAddOcc(false)} style={{ flex:1,padding:"13px",background:"#E0E8E0",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#507050" }}>キャンセル</button>
-                <button onClick={addOccMaster} style={{ flex:2,padding:"13px",background:"#1E3828",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#fff",fontWeight:700 }}>登録</button>
+                <button onClick={()=>setShowAddOcc(false)} style={{ flex:1,padding:"13px",background:"#E0E8F8",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#4060A0" }}>キャンセル</button>
+                <button onClick={addOccMaster} style={{ flex:2,padding:"13px",background:"#1C3561",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#fff",fontWeight:700 }}>登録</button>
               </div>
             </div>
           </div>
@@ -520,7 +525,7 @@ function App() {
     const catName = id => (expCats.find(c => c.id === id) || {name:"未分類"}).name;
     const catColor = id => {
       const idx = expCats.findIndex(c => c.id === id);
-      return ["#4A7A60","#6060A0","#9A6030","#607060","#A04060","#307860","#806030","#405080"][idx] || "#607060";
+      return ["#3B70CC","#8050C8","#C04060","#2890A8","#A038B0","#2870C8","#8850C0","#4858A8"][idx] || "#5068A8";
     };
     const m2 = current.month.match(/(\d+)年(\d+)月/) || [];
     const expYear = Number(m2[1]) || new Date().getFullYear();
@@ -528,37 +533,35 @@ function App() {
     const expMonthDays = new Date(expYear, expMonthNum, 0).getDate();
     const expDay = parseInt((newExp.date || "").split("/")[1]) || new Date().getDate();
     return (
-      <div style={{ minHeight:"100vh", background:"#F0F4F0", paddingBottom:100 }}>
+      <div style={{ minHeight:"100vh", background:"#EEF3FF", paddingBottom:100 }}>
         <SubHeader title="出費管理" sub="EXPENSES" />
         <div style={{ maxWidth:480, margin:"0 auto", padding:"16px" }}>
 
-          {/* サマリー */}
           <div style={{ display:"flex", gap:10, marginBottom:12 }}>
-            <div style={{ flex:1, background:"#fff", borderRadius:12, padding:"14px", textAlign:"center", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
-              <div style={{ fontSize:11, color:"#607860", marginBottom:4 }}>現金支出</div>
-              <div style={{ fontSize:20, fontWeight:700, color:"#1E2820" }}>{maskY(yen(cashExpTotal))}</div>
-              <div style={{ fontSize:10, color:"#90A890", marginTop:2 }}>残高から引く</div>
+            <div style={{ flex:1, ...card, padding:"14px", textAlign:"center" }}>
+              <div style={{ fontSize:11, color:"#4A6090", marginBottom:4 }}>現金支出</div>
+              <div style={{ fontSize:20, fontWeight:700, color:"#1A2840" }}>{maskY(yen(cashExpTotal))}</div>
+              <div style={{ fontSize:10, color:"#88A8CC", marginTop:2 }}>残高から引く</div>
             </div>
-            <div style={{ flex:1, background:"#fff", borderRadius:12, padding:"14px", textAlign:"center", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
-              <div style={{ fontSize:11, color:"#90A890", marginBottom:4 }}>クレジット</div>
+            <div style={{ flex:1, ...card, padding:"14px", textAlign:"center" }}>
+              <div style={{ fontSize:11, color:"#88A8CC", marginBottom:4 }}>クレジット</div>
               <div style={{ fontSize:20, fontWeight:700, color:"#4060A0" }}>{maskY(yen(creditExpTotal))}</div>
-              <div style={{ fontSize:10, color:"#B0B8C8", marginTop:2 }}>別管理</div>
+              <div style={{ fontSize:10, color:"#B0C0D8", marginTop:2 }}>別管理</div>
             </div>
           </div>
 
-          {/* カテゴリ編集＆フィルター */}
-          <div style={{ background:"#fff", borderRadius:12, padding:"12px 14px", marginBottom:12, boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
-            <div style={{ fontSize:10, color:"#90A890", marginBottom:8, letterSpacing:"0.08em" }}>カテゴリ（タップでフィルター・長押しで名前編集）</div>
+          <div style={{ ...card, marginBottom:12 }}>
+            <div style={{ fontSize:10, color:"#88A8CC", marginBottom:8, letterSpacing:"0.08em" }}>カテゴリ（タップでフィルター・長押しで名前編集）</div>
             <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
               {expCats.map(c => (
                 editCatId === c.id ? (
                   <div key={c.id} style={{ display:"flex", gap:4, alignItems:"center" }}>
                     <input value={editCatName} onChange={e=>setEditCatName(e.target.value)}
                       onKeyDown={e=>e.key==="Enter"&&saveCatName(c.id)}
-                      style={{ width:72, padding:"5px 8px", border:"1px solid #B0D8B0", borderRadius:8, fontSize:12, outline:"none" }}
+                      style={{ width:72, padding:"5px 8px", border:"1px solid #B0C4F0", borderRadius:8, fontSize:12, outline:"none" }}
                       autoFocus />
-                    <button onClick={()=>saveCatName(c.id)} style={{ padding:"5px 8px", background:"#1E3828", border:"none", borderRadius:8, color:"#fff", fontSize:11, cursor:"pointer" }}>完了</button>
-                    <button onClick={()=>setEditCatId(null)} style={{ padding:"5px 6px", background:"#E0E8E0", border:"none", borderRadius:8, color:"#507050", fontSize:11, cursor:"pointer" }}>×</button>
+                    <button onClick={()=>saveCatName(c.id)} style={{ padding:"5px 8px", background:"#1C3561", border:"none", borderRadius:8, color:"#fff", fontSize:11, cursor:"pointer" }}>完了</button>
+                    <button onClick={()=>setEditCatId(null)} style={{ padding:"5px 6px", background:"#E0E8F8", border:"none", borderRadius:8, color:"#4060A0", fontSize:11, cursor:"pointer" }}>×</button>
                   </div>
                 ) : (
                   <button key={c.id}
@@ -572,8 +575,8 @@ function App() {
                     onPointerLeave={e=>clearTimeout(e.currentTarget._lt)}
                     style={{
                       padding:"5px 12px", border:"none", borderRadius:20, fontSize:12, cursor:"pointer", fontWeight:600,
-                      background: filterCat===c.id ? catColor(c.id) : "#EEF2EE",
-                      color: filterCat===c.id ? "#fff" : "#507050",
+                      background: filterCat===c.id ? catColor(c.id) : "#EEF2FF",
+                      color: filterCat===c.id ? "#fff" : "#3A5CA8",
                       transition:"background 0.15s"
                     }}>{c.name}</button>
                 )
@@ -585,25 +588,24 @@ function App() {
                 <div style={{ display:"flex", gap:4, alignItems:"center" }}>
                   <input value={newCatName} onChange={e=>setNewCatName(e.target.value)}
                     onKeyDown={e=>e.key==="Enter"&&addCat()}
-                    style={{ width:80, padding:"5px 8px", border:"1px solid #B0D8B0", borderRadius:8, fontSize:12, outline:"none" }}
+                    style={{ width:80, padding:"5px 8px", border:"1px solid #B0C4F0", borderRadius:8, fontSize:12, outline:"none" }}
                     autoFocus />
-                  <button onClick={addCat} style={{ padding:"5px 8px", background:"#1E3828", border:"none", borderRadius:8, color:"#fff", fontSize:11, cursor:"pointer" }}>完了</button>
-                  <button onClick={()=>{setShowAddCat(false);setNewCatName("");}} style={{ padding:"5px 6px", background:"#E0E8E0", border:"none", borderRadius:8, color:"#507050", fontSize:11, cursor:"pointer" }}>×</button>
+                  <button onClick={addCat} style={{ padding:"5px 8px", background:"#1C3561", border:"none", borderRadius:8, color:"#fff", fontSize:11, cursor:"pointer" }}>完了</button>
+                  <button onClick={()=>{setShowAddCat(false);setNewCatName("");}} style={{ padding:"5px 6px", background:"#E0E8F8", border:"none", borderRadius:8, color:"#4060A0", fontSize:11, cursor:"pointer" }}>×</button>
                 </div>
               ) : (
-                <button onClick={()=>setShowAddCat(true)} style={{ padding:"5px 10px", border:"1px dashed #B0C8B0", borderRadius:20, fontSize:12, cursor:"pointer", background:"transparent", color:"#3A7A4A", fontWeight:600 }}>＋</button>
+                <button onClick={()=>setShowAddCat(true)} style={{ padding:"5px 10px", border:"1px dashed #A8C0EC", borderRadius:20, fontSize:12, cursor:"pointer", background:"transparent", color:"#3B6FCC", fontWeight:600 }}>＋</button>
               )}
             </div>
           </div>
 
-          {/* リスト */}
           {filtered.length === 0 ? (
-            <div style={{ background:"#fff", borderRadius:14, padding:"32px 16px", textAlign:"center", color:"#90A890", fontSize:14 }}>まだ出費がありません</div>
+            <div style={{ ...card, padding:"32px 16px", textAlign:"center", color:"#88A8CC", fontSize:14 }}>まだ出費がありません</div>
           ) : (
             <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
               {filtered.map(e => (
-                <div key={e.id} style={{ background:"#fff", borderRadius:12, padding:"12px 14px", display:"flex", alignItems:"center", gap:8, boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
-                  <div style={{ fontSize:12, color:"#90A890", minWidth:32, flexShrink:0 }}>{e.date}</div>
+                <div key={e.id} style={{ background:"#fff", borderRadius:14, padding:"12px 14px", display:"flex", alignItems:"center", gap:8, boxShadow:"0 1px 6px rgba(30,60,180,0.06)", border:"1px solid #DDE8F8" }}>
+                  <div style={{ fontSize:12, color:"#88A8CC", minWidth:32, flexShrink:0 }}>{e.date}</div>
                   <div style={{ flex:1 }}>
                     <div style={{ fontSize:14 }}>{e.name}</div>
                     <div style={{ fontSize:10, marginTop:2, color: catColor(e.catId), fontWeight:600 }}>{catName(e.catId)}</div>
@@ -611,8 +613,8 @@ function App() {
                   <div style={{ fontWeight:700, fontSize:14, flexShrink:0 }}>{maskY(yen(e.amount))}</div>
                   <div style={{
                     fontSize:10, padding:"3px 8px", borderRadius:10, flexShrink:0,
-                    background: e.type==="cash" ? "#EEF2EE" : "#E8EEF8",
-                    color: e.type==="cash" ? "#507050" : "#4060A0",
+                    background: e.type==="cash" ? "#EEF2FF" : "#E8EEF8",
+                    color: e.type==="cash" ? "#3A5CA8" : "#4060A0",
                     fontWeight:600
                   }}>{e.type==="cash" ? "現金" : "CR"}</div>
                   <button onClick={()=>deleteExpense(e.id)} style={{ background:"#FEF0F0",border:"none",borderRadius:6,width:26,height:26,cursor:"pointer",fontSize:12,color:"#C84040",flexShrink:0 }}>×</button>
@@ -622,61 +624,59 @@ function App() {
           )}
         </div>
 
-        {/* 追加ボタン（固定） */}
-        <div style={{ position:"fixed", bottom:0, left:0, right:0, padding:"12px 16px 28px", background:"#F0F4F0", borderTop:"1px solid #E0E8E0", maxWidth:480, margin:"0 auto" }}>
-          <button onClick={()=>setShowAddExp(true)} style={{ width:"100%", padding:"14px", background:"#1E3828", border:"none", borderRadius:12, color:"#C8E8C0", fontSize:14, cursor:"pointer", fontWeight:600 }}>＋ 出費を追加</button>
+        <div style={{ position:"fixed", bottom:0, left:0, right:0, padding:"12px 16px 28px", background:"#EEF3FF", borderTop:"1px solid #DDE8F8", maxWidth:480, margin:"0 auto" }}>
+          <button onClick={()=>setShowAddExp(true)} style={{ width:"100%", padding:"14px", background:"linear-gradient(135deg, #1C3561, #2A4890)", border:"none", borderRadius:14, color:"#BCD8FF", fontSize:14, cursor:"pointer", fontWeight:600 }}>＋ 出費を追加</button>
         </div>
 
-        {/* 追加モーダル */}
         {showAddExp&&(
           <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:300,display:"flex",alignItems:"flex-end" }} onClick={e=>e.target===e.currentTarget&&setShowAddExp(false)}>
-            <div style={{ background:"#F0F4F0",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",width:"100%",maxWidth:480,margin:"0 auto" }}>
+            <div style={{ background:"#F5F9FF",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",width:"100%",maxWidth:480,margin:"0 auto" }}>
               <div style={{ fontSize:15,fontWeight:700,marginBottom:16 }}>出費を追加</div>
               <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
                 <div>
-                  <label style={{ fontSize:11,color:"#607860" }}>使ったもの</label>
+                  <label style={{ fontSize:11,color:"#4A6090" }}>使ったもの</label>
                   <input value={newExp.name} onChange={e=>setNewExp(x=>({...x,name:e.target.value}))} style={inp} placeholder="コンビニ、ランチ…" />
                 </div>
                 <div>
-                  <label style={{ fontSize:11,color:"#607860",display:"block",marginBottom:4 }}>日付</label>
+                  <label style={{ fontSize:11,color:"#4A6090",display:"block",marginBottom:4 }}>日付</label>
                   <DayPicker day={expDay} maxDay={expMonthDays} monthNum={expMonthNum}
                     onChange={d => setNewExp(x => ({...x,date:`${expMonthNum}/${d}`}))} />
                 </div>
                 <div>
-                  <label style={{ fontSize:11,color:"#607860" }}>金額</label>
+                  <label style={{ fontSize:11,color:"#4A6090" }}>金額</label>
                   <input type="number" value={newExp.amount} onChange={e=>setNewExp(x=>({...x,amount:e.target.value}))} onFocus={e=>e.target.select()} style={inp} inputMode="numeric" placeholder="0" />
                 </div>
                 <div>
-                  <label style={{ fontSize:11,color:"#607860",display:"block",marginBottom:8 }}>カテゴリ</label>
+                  <label style={{ fontSize:11,color:"#4A6090",display:"block",marginBottom:8 }}>カテゴリ</label>
                   <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
                     {expCats.map(c => (
                       <button key={c.id} onClick={()=>setNewExp(x=>({...x,catId:c.id}))} style={{
                         padding:"8px 14px",border:"none",borderRadius:20,fontSize:13,cursor:"pointer",fontWeight:600,
-                        background: newExp.catId===c.id ? catColor(c.id) : "#E8EEE8",
-                        color: newExp.catId===c.id ? "#fff" : "#507050",
+                        background: newExp.catId===c.id ? catColor(c.id) : "#E8EFF8",
+                        color: newExp.catId===c.id ? "#fff" : "#3A5CA8",
                       }}>{c.name}</button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <label style={{ fontSize:11,color:"#607860",display:"block",marginBottom:8 }}>支払い方法</label>
+                  <label style={{ fontSize:11,color:"#4A6090",display:"block",marginBottom:8 }}>支払い方法</label>
                   <div style={{ display:"flex",gap:8 }}>
                     <button onClick={()=>setNewExp(x=>({...x,type:"cash"}))} style={{
                       flex:1,padding:"13px",border:"none",borderRadius:10,fontSize:14,cursor:"pointer",fontWeight:600,
-                      background:newExp.type==="cash"?"#1E3828":"#E0E8E0",
-                      color:newExp.type==="cash"?"#C8E8C0":"#507050"
+                      background:newExp.type==="cash"?"#1C3561":"#E0E8F8",
+                      color:newExp.type==="cash"?"#BCD8FF":"#4060A0"
                     }}>現金</button>
                     <button onClick={()=>setNewExp(x=>({...x,type:"credit"}))} style={{
                       flex:1,padding:"13px",border:"none",borderRadius:10,fontSize:14,cursor:"pointer",fontWeight:600,
-                      background:newExp.type==="credit"?"#304878":"#E0E8E0",
-                      color:newExp.type==="credit"?"#C8D8F8":"#507050"
+                      background:newExp.type==="credit"?"#2A3880":"#E0E8F8",
+                      color:newExp.type==="credit"?"#C0D0F8":"#4060A0"
                     }}>クレジット</button>
                   </div>
                 </div>
               </div>
               <div style={{ display:"flex",gap:10,marginTop:20 }}>
-                <button onClick={()=>setShowAddExp(false)} style={{ flex:1,padding:"13px",background:"#E0E8E0",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#507050" }}>キャンセル</button>
-                <button onClick={addExpense} style={{ flex:2,padding:"13px",background:"#1E3828",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#fff",fontWeight:700 }}>追加</button>
+                <button onClick={()=>setShowAddExp(false)} style={{ flex:1,padding:"13px",background:"#E0E8F8",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#4060A0" }}>キャンセル</button>
+                <button onClick={addExpense} style={{ flex:2,padding:"13px",background:"#1C3561",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#fff",fontWeight:700 }}>追加</button>
               </div>
             </div>
           </div>
@@ -687,11 +687,11 @@ function App() {
 
   // ===== ホーム =====
   return (
-    <div style={{ minHeight:"100vh", background:"#F0F4F0", paddingBottom:80 }}>
-      <div style={{ background:"#1E3828",color:"#F0F4F0",padding:"16px 20px 18px",paddingTop:"max(env(safe-area-inset-top),16px)",position:"sticky",top:0,zIndex:100 }}>
+    <div style={{ minHeight:"100vh", background:"#EEF3FF", paddingBottom:80 }}>
+      <div style={{ background:"linear-gradient(160deg, #1C3561 0%, #2A4890 100%)",color:"#F0F5FF",padding:"16px 20px 18px",paddingTop:"max(env(safe-area-inset-top),16px)",position:"sticky",top:0,zIndex:100 }}>
         <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14 }}>
           <div>
-            <div style={{ fontSize:10,letterSpacing:"0.15em",color:"#607860",marginBottom:2 }}>HOUSEHOLD BUDGET</div>
+            <div style={{ fontSize:10,letterSpacing:"0.15em",color:"#7AAAE0",marginBottom:2 }}>HOUSEHOLD BUDGET</div>
             <div style={{ fontSize:22,fontWeight:700 }}>{current.month}</div>
           </div>
           <div style={{ display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end" }}>
@@ -700,45 +700,44 @@ function App() {
             <NavBtn label="不定期"   onClick={()=>setPage("occasional")} />
             <NavBtn label="出費"     onClick={()=>setPage("expenses")} />
             <NavBtn label="データ"   onClick={()=>setShowData(true)} />
-            <button onClick={()=>setHideNums(h=>!h)} style={{ background:"#fff",border:"none",borderRadius:8,padding:"4px 8px",fontSize:11,color:"#3E5840",cursor:"pointer" }}>{hideNums?"(`⊙ω⊙´)":"(´∩ω∩｀)"}</button>
+            <button onClick={()=>setHideNums(h=>!h)} style={{ background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:8,padding:"4px 8px",fontSize:11,color:"#C8DEFF",cursor:"pointer" }}>{hideNums?"(`⊙ω⊙´)":"(´∩ω∩｀)"}</button>
           </div>
         </div>
-        <div style={{ background:"#2E4838",borderRadius:14,padding:"16px" }}>
-          <div style={{ fontSize:11,color:"#90B890",marginBottom:4 }}>今月の残り</div>
-          <div style={{ fontSize:32,fontWeight:700,color:hideNums?"#90B890":balColor,letterSpacing:"-0.02em" }}>{maskY(yen(balance))}</div>
-          <div style={{ display:"flex",justifyContent:"space-between",fontSize:11,color:"#607860",marginTop:8 }}>
+        <div style={{ background:"rgba(255,255,255,0.10)",borderRadius:16,padding:"16px",border:"1px solid rgba(255,255,255,0.15)" }}>
+          <div style={{ fontSize:11,color:"#90B8F0",marginBottom:4 }}>今月の残り</div>
+          <div style={{ fontSize:34,fontWeight:700,color:hideNums?"#90B8F0":balColor,letterSpacing:"-0.02em" }}>{maskY(yen(balance))}</div>
+          <div style={{ display:"flex",justifyContent:"space-between",fontSize:11,color:"rgba(255,255,255,0.55)",marginTop:8 }}>
             <span>収入 {maskY(yen(income))}</span>
             <span>支出 {maskY(yen(totalOut))}</span>
           </div>
-          <div style={{ marginTop:10,background:"#1E3828",borderRadius:4,height:5,overflow:"hidden" }}>
-            <div style={{ height:"100%",borderRadius:4,width:income>0?`${Math.min((totalOut/income)*100,100)}%`:"0%",background:totalOut/income>0.9?"#C84040":totalOut/income>0.7?"#D4901A":"#5CB870",transition:"width 0.4s ease" }} />
+          <div style={{ marginTop:10,background:"rgba(0,0,0,0.25)",borderRadius:4,height:5,overflow:"hidden" }}>
+            <div style={{ height:"100%",borderRadius:4,width:income>0?`${Math.min((totalOut/income)*100,100)}%`:"0%",background:totalOut/income>0.9?"#C84040":totalOut/income>0.7?"#D4901A":"#60A8F0",transition:"width 0.4s ease" }} />
           </div>
         </div>
       </div>
 
       <div style={{ maxWidth:480,margin:"0 auto",padding:"0 16px" }}>
-        <div style={{ marginTop:20,background:"#fff",borderRadius:14,padding:"16px",boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
-          <div style={{ fontSize:11,color:"#607860",letterSpacing:"0.1em",marginBottom:4 }}>今月の手取り</div>
+        <div style={{ marginTop:20,...card }}>
+          <div style={{ fontSize:11,color:"#4A6090",letterSpacing:"0.1em",marginBottom:4 }}>今月の手取り</div>
           <input type="number" value={current.income} onChange={e=>setCurrent(c=>({...c,income:e.target.value}))} onFocus={e=>e.target.select()} style={{...inp,marginTop:0,fontSize:20,fontWeight:700}} inputMode="numeric" />
         </div>
 
-        {/* 変動支出 */}
-        <div style={{ marginTop:12,background:"#fff",borderRadius:14,padding:"16px",boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
-          <div style={{ fontSize:11,color:"#607860",letterSpacing:"0.1em",marginBottom:12 }}>変動支出</div>
+        <div style={{ marginTop:12,...card }}>
+          <div style={{ fontSize:11,color:"#4A6090",letterSpacing:"0.1em",marginBottom:12 }}>変動支出</div>
           <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
             {varItems.map(v => (
               <div key={v.id}>
                 {editVarId===v.id ? (
                   <div style={{ display:"flex",gap:6,marginBottom:4 }}>
                     <input value={editVarName} onChange={e=>setEditVarName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveVarName(v.id)}
-                      style={{ flex:1,padding:"7px 10px",background:"#fff",border:"1px solid #D0D8D0",borderRadius:8,fontSize:13,color:"#1E2820",outline:"none" }} />
-                    <button onClick={()=>saveVarName(v.id)} style={{ padding:"7px 12px",background:"#1E3828",border:"none",borderRadius:8,color:"#fff",fontSize:12,cursor:"pointer" }}>完了</button>
+                      style={{ flex:1,padding:"7px 10px",background:"#fff",border:"1px solid #C5D5EE",borderRadius:8,fontSize:13,color:"#1A2840",outline:"none" }} />
+                    <button onClick={()=>saveVarName(v.id)} style={{ padding:"7px 12px",background:"#1C3561",border:"none",borderRadius:8,color:"#fff",fontSize:12,cursor:"pointer" }}>完了</button>
                     <button onClick={()=>deleteVarItem(v.id)} style={{ padding:"7px 10px",background:"#FEF0F0",border:"none",borderRadius:8,color:"#C84040",fontSize:12,cursor:"pointer" }}>削除</button>
                   </div>
                 ) : (
                   <div style={{ display:"flex",alignItems:"center",gap:4,marginBottom:3 }}>
-                    <label style={{ fontSize:12,color:"#708870",flex:1 }}>{v.name}</label>
-                    <button onClick={()=>{setEditVarId(v.id);setEditVarName(v.name);}} style={{ background:"#EEF2EE",border:"none",borderRadius:6,width:26,height:26,cursor:"pointer",fontSize:12 }}>✏️</button>
+                    <label style={{ fontSize:12,color:"#4A6090",flex:1 }}>{v.name}</label>
+                    <button onClick={()=>{setEditVarId(v.id);setEditVarName(v.name);}} style={{ background:"#EEF2FF",border:"none",borderRadius:6,width:26,height:26,cursor:"pointer",fontSize:12 }}>✏️</button>
                     <button onClick={()=>deleteVarItem(v.id)} style={{ background:"#FEF0F0",border:"none",borderRadius:6,width:26,height:26,cursor:"pointer",fontSize:13,color:"#C84040",fontWeight:700 }}>×</button>
                   </div>
                 )}
@@ -747,48 +746,46 @@ function App() {
             ))}
             <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between" }}>
               <div>
-                <div style={{ fontSize:12,color:isEvenMonth?"#708870":"#B0B8B0" }}>NHK（¥3,900）</div>
-                {!isEvenMonth&&<div style={{ fontSize:10,color:"#C0C8C0",marginTop:1 }}>偶数月のみ</div>}
+                <div style={{ fontSize:12,color:isEvenMonth?"#4A6090":"#A0B0C8" }}>NHK（¥3,900）</div>
+                {!isEvenMonth&&<div style={{ fontSize:10,color:"#A0B8CC",marginTop:1 }}>偶数月のみ</div>}
               </div>
               <button onClick={()=>isEvenMonth&&setCurrent(c=>({...c,nhk:!c.nhk}))}
-                style={{ background:!isEvenMonth?"#D8D8D8":current.nhk?"#3A7A4A":"#E0E8E0",border:"none",borderRadius:20,width:48,height:26,cursor:isEvenMonth?"pointer":"default",position:"relative",transition:"background 0.2s",opacity:isEvenMonth?1:0.45 }}>
+                style={{ background:!isEvenMonth?"#C8D4E8":current.nhk?"#3B6FCC":"#D0DCF0",border:"none",borderRadius:20,width:48,height:26,cursor:isEvenMonth?"pointer":"default",position:"relative",transition:"background 0.2s",opacity:isEvenMonth?1:0.5 }}>
                 <div style={{ position:"absolute",top:3,borderRadius:"50%",width:20,height:20,background:"#fff",left:(isEvenMonth&&current.nhk)?25:3,transition:"left 0.2s" }} />
               </button>
             </div>
             {showAddVar ? (
               <div style={{ display:"flex",gap:6 }}>
                 <input value={newVarName} onChange={e=>setNewVarName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addVarItem()}
-                  style={{ flex:1,padding:"9px 12px",background:"#fff",border:"1px solid #B0D8B0",borderRadius:8,fontSize:13,color:"#1E2820",outline:"none" }}
+                  style={{ flex:1,padding:"9px 12px",background:"#fff",border:"1px solid #B0C4F0",borderRadius:8,fontSize:13,color:"#1A2840",outline:"none" }}
                   placeholder="項目名" autoFocus />
-                <button onClick={addVarItem} style={{ padding:"9px 14px",background:"#1E3828",border:"none",borderRadius:8,color:"#fff",fontSize:13,cursor:"pointer",fontWeight:600 }}>追加</button>
-                <button onClick={()=>{setShowAddVar(false);setNewVarName("");}} style={{ padding:"9px 10px",background:"#E0E8E0",border:"none",borderRadius:8,color:"#507050",fontSize:13,cursor:"pointer" }}>×</button>
+                <button onClick={addVarItem} style={{ padding:"9px 14px",background:"#1C3561",border:"none",borderRadius:8,color:"#fff",fontSize:13,cursor:"pointer",fontWeight:600 }}>追加</button>
+                <button onClick={()=>{setShowAddVar(false);setNewVarName("");}} style={{ padding:"9px 10px",background:"#E0E8F8",border:"none",borderRadius:8,color:"#4060A0",fontSize:13,cursor:"pointer" }}>×</button>
               </div>
             ) : (
-              <button onClick={()=>setShowAddVar(true)} style={{ padding:"9px",width:"100%",background:"transparent",border:"1.5px dashed #B0C8B0",borderRadius:8,color:"#3A7A4A",fontSize:12,cursor:"pointer" }}>＋ 項目を追加</button>
+              <button onClick={()=>setShowAddVar(true)} style={{ padding:"9px",width:"100%",background:"transparent",border:"1.5px dashed #A8C0EC",borderRadius:8,color:"#3B6FCC",fontSize:12,cursor:"pointer" }}>＋ 項目を追加</button>
             )}
           </div>
         </div>
 
-        {/* 固定支出 */}
-        <div style={{ marginTop:12,background:"#fff",borderRadius:14,padding:"16px",boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+        <div style={{ marginTop:12,...card }}>
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-            <div style={{ fontSize:11,color:"#607860",letterSpacing:"0.1em" }}>固定支出合計</div>
+            <div style={{ fontSize:11,color:"#4A6090",letterSpacing:"0.1em" }}>固定支出合計</div>
             <div style={{ fontSize:16,fontWeight:700 }}>{maskY(yen(fixedTotal))}</div>
           </div>
           <div style={{ marginTop:10,display:"flex",flexWrap:"wrap",gap:6 }}>
             {fixed.map(f=>(
-              <div key={f.id} style={{ background:"#EEF2EE",borderRadius:8,padding:"4px 10px",fontSize:11,color:"#507050" }}>{f.name} {maskY(yen(f.amount))}</div>
+              <div key={f.id} style={{ background:"#EEF2FF",borderRadius:8,padding:"4px 10px",fontSize:11,color:"#3A5CA8" }}>{f.name} {maskY(yen(f.amount))}</div>
             ))}
           </div>
         </div>
 
-        {/* 不定期 */}
-        <div style={{ marginTop:12,background:"#fff",borderRadius:14,padding:"16px",boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+        <div style={{ marginTop:12,...card }}>
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:(current.occasionals||[]).length>0?10:0 }}>
-            <div style={{ fontSize:11,color:"#607860",letterSpacing:"0.1em" }}>
-              不定期支出 {occTotal>0&&<span style={{ fontWeight:700,color:"#1E2820" }}>合計 {maskY(yen(occTotal))}</span>}
+            <div style={{ fontSize:11,color:"#4A6090",letterSpacing:"0.1em" }}>
+              不定期支出 {occTotal>0&&<span style={{ fontWeight:700,color:"#1A2840" }}>合計 {maskY(yen(occTotal))}</span>}
             </div>
-            <button onClick={()=>setShowOcc(true)} style={{ background:"#EEF2EE",border:"none",borderRadius:8,padding:"5px 12px",fontSize:12,color:"#3A7A4A",cursor:"pointer",fontWeight:600 }}>＋追加</button>
+            <button onClick={()=>setShowOcc(true)} style={{ background:"#EEF2FF",border:"none",borderRadius:8,padding:"5px 12px",fontSize:12,color:"#3B6FCC",cursor:"pointer",fontWeight:600 }}>＋追加</button>
           </div>
           {(current.occasionals||[]).map(o=>(
             <div key={o.id} style={{ display:"flex",alignItems:"center",gap:8,marginTop:8 }}>
@@ -799,23 +796,21 @@ function App() {
           ))}
         </div>
 
-        {/* 出費サマリー（ホーム） */}
         {(cashExpTotal > 0 || creditExpTotal > 0) && (
-          <div style={{ marginTop:12,background:"#fff",borderRadius:14,padding:"14px 16px",boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
+          <div style={{ marginTop:12,...card, padding:"14px 16px" }}>
             <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6 }}>
-              <div style={{ fontSize:11,color:"#607860",letterSpacing:"0.1em" }}>出費</div>
-              <button onClick={()=>setPage("expenses")} style={{ fontSize:11,color:"#3A7A4A",background:"none",border:"none",cursor:"pointer" }}>一覧 →</button>
+              <div style={{ fontSize:11,color:"#4A6090",letterSpacing:"0.1em" }}>出費</div>
+              <button onClick={()=>setPage("expenses")} style={{ fontSize:11,color:"#3B6FCC",background:"none",border:"none",cursor:"pointer" }}>一覧 →</button>
             </div>
             <div style={{ display:"flex",gap:12 }}>
               {cashExpTotal>0&&<div style={{ fontSize:13 }}>現金 <span style={{ fontWeight:700 }}>{maskY(yen(cashExpTotal))}</span></div>}
-              {creditExpTotal>0&&<div style={{ fontSize:13,color:"#4060A0" }}>CR <span style={{ fontWeight:700 }}>{maskY(yen(creditExpTotal))}</span><span style={{ fontSize:10,color:"#90A890",marginLeft:4 }}>別管理</span></div>}
+              {creditExpTotal>0&&<div style={{ fontSize:13,color:"#4060A0" }}>CR <span style={{ fontWeight:700 }}>{maskY(yen(creditExpTotal))}</span><span style={{ fontSize:10,color:"#88A8CC",marginLeft:4 }}>別管理</span></div>}
             </div>
           </div>
         )}
 
-        {/* 支出内訳 */}
-        <div style={{ marginTop:12,background:"#fff",borderRadius:14,padding:"16px",boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
-          <div style={{ fontSize:11,color:"#607860",letterSpacing:"0.1em",marginBottom:10 }}>支出内訳</div>
+        <div style={{ marginTop:12,...card }}>
+          <div style={{ fontSize:11,color:"#4A6090",letterSpacing:"0.1em",marginBottom:10 }}>支出内訳</div>
           {[
             { label:"固定支出",   val:fixedTotal },
             ...varItems.filter(v=>(Number(v.amount)||0)>0).map(v=>({ label:v.name, val:Number(v.amount)||0 })),
@@ -823,8 +818,8 @@ function App() {
             { label:"不定期支出", val:occTotal },
             { label:"現金支出",   val:cashExpTotal },
           ].filter(r=>r.val>0).map((r,i)=>(
-            <div key={i} style={{ display:"flex",justifyContent:"space-between",fontSize:13,padding:"5px 0",borderBottom:"1px solid #F0F4F0" }}>
-              <span style={{ color:"#708870" }}>{r.label}</span>
+            <div key={i} style={{ display:"flex",justifyContent:"space-between",fontSize:13,padding:"5px 0",borderBottom:"1px solid #EEF3FF" }}>
+              <span style={{ color:"#5070A0" }}>{r.label}</span>
               <span style={{ fontWeight:600 }}>{maskY(yen(r.val))}</span>
             </div>
           ))}
@@ -832,36 +827,36 @@ function App() {
             <span>合計</span><span>{maskY(yen(totalOut))}</span>
           </div>
           {creditExpTotal>0&&(
-            <div style={{ marginTop:8,paddingTop:8,borderTop:"1px dashed #E0E8E0",display:"flex",justifyContent:"space-between",fontSize:12,color:"#4060A0" }}>
+            <div style={{ marginTop:8,paddingTop:8,borderTop:"1px dashed #DDE8F8",display:"flex",justifyContent:"space-between",fontSize:12,color:"#4060A0" }}>
               <span>クレジット利用（別管理）</span>
               <span style={{ fontWeight:600 }}>{maskY(yen(creditExpTotal))}</span>
             </div>
           )}
         </div>
 
-        <button onClick={()=>setShowClose(true)} style={{ marginTop:16,width:"100%",padding:"14px",background:"#1E3828",border:"none",borderRadius:12,color:"#C8E8C0",fontSize:14,cursor:"pointer",fontWeight:600,letterSpacing:"0.05em" }}>今月を締める →</button>
+        <button onClick={()=>setShowClose(true)} style={{ marginTop:16,width:"100%",padding:"15px",background:"linear-gradient(135deg, #1C3561, #2A4890)",border:"none",borderRadius:14,color:"#BCD8FF",fontSize:14,cursor:"pointer",fontWeight:600,letterSpacing:"0.05em" }}>今月を締める →</button>
       </div>
 
       {showOcc&&(
         <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:300,display:"flex",alignItems:"flex-end" }} onClick={e=>e.target===e.currentTarget&&setShowOcc(false)}>
-          <div style={{ background:"#F0F4F0",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",width:"100%",maxWidth:480,margin:"0 auto" }}>
+          <div style={{ background:"#F5F9FF",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",width:"100%",maxWidth:480,margin:"0 auto" }}>
             <div style={{ fontSize:15,fontWeight:700,marginBottom:16 }}>不定期支出を追加</div>
             {occMaster.length>0&&(
               <div style={{ marginBottom:16 }}>
-                <div style={{ fontSize:11,color:"#607860",marginBottom:8 }}>リストから選ぶ</div>
+                <div style={{ fontSize:11,color:"#4A6090",marginBottom:8 }}>リストから選ぶ</div>
                 <div style={{ display:"flex",flexWrap:"wrap",gap:6 }}>
-                  {occMaster.map(m=>(<button key={m.id} onClick={()=>{addToThisMonth(m);setShowOcc(false);}} style={{ background:"#EEF8EE",border:"1px solid #B0D8B0",borderRadius:8,padding:"5px 10px",fontSize:12,color:"#3A7A4A",cursor:"pointer" }}>{m.name}　{yen(m.amount)}</button>))}
+                  {occMaster.map(m=>(<button key={m.id} onClick={()=>{addToThisMonth(m);setShowOcc(false);}} style={{ background:"#EEF4FF",border:"1px solid #B0C4F0",borderRadius:8,padding:"5px 10px",fontSize:12,color:"#3B6FCC",cursor:"pointer" }}>{m.name}　{yen(m.amount)}</button>))}
                 </div>
-                <div style={{ fontSize:11,color:"#90A890",margin:"12px 0 8px" }}>または手入力</div>
+                <div style={{ fontSize:11,color:"#88A8CC",margin:"12px 0 8px" }}>または手入力</div>
               </div>
             )}
             <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
-              <div><label style={{ fontSize:11,color:"#607860" }}>項目名</label><input value={occInput.name} onChange={e=>setOccInput(o=>({...o,name:e.target.value}))} style={inp} placeholder="自動車税、奨学金…" /></div>
-              <div><label style={{ fontSize:11,color:"#607860" }}>金額</label><input type="number" value={occInput.amount} onChange={e=>setOccInput(o=>({...o,amount:e.target.value}))} onFocus={e=>e.target.select()} style={inp} inputMode="numeric" placeholder="0" /></div>
+              <div><label style={{ fontSize:11,color:"#4A6090" }}>項目名</label><input value={occInput.name} onChange={e=>setOccInput(o=>({...o,name:e.target.value}))} style={inp} placeholder="自動車税、奨学金…" /></div>
+              <div><label style={{ fontSize:11,color:"#4A6090" }}>金額</label><input type="number" value={occInput.amount} onChange={e=>setOccInput(o=>({...o,amount:e.target.value}))} onFocus={e=>e.target.select()} style={inp} inputMode="numeric" placeholder="0" /></div>
             </div>
             <div style={{ display:"flex",gap:10,marginTop:20 }}>
-              <button onClick={()=>setShowOcc(false)} style={{ flex:1,padding:"13px",background:"#E0E8E0",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#507050" }}>キャンセル</button>
-              <button onClick={addOccasional} style={{ flex:2,padding:"13px",background:"#1E3828",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#fff",fontWeight:700 }}>追加</button>
+              <button onClick={()=>setShowOcc(false)} style={{ flex:1,padding:"13px",background:"#E0E8F8",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#4060A0" }}>キャンセル</button>
+              <button onClick={addOccasional} style={{ flex:2,padding:"13px",background:"#1C3561",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#fff",fontWeight:700 }}>追加</button>
             </div>
           </div>
         </div>
@@ -869,17 +864,17 @@ function App() {
 
       {showClose&&(
         <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center" }}>
-          <div style={{ background:"#fff",borderRadius:18,padding:"28px 24px",maxWidth:320,width:"90%" }}>
+          <div style={{ background:"#fff",borderRadius:20,padding:"28px 24px",maxWidth:320,width:"90%",boxShadow:"0 8px 32px rgba(30,60,180,0.18)" }}>
             <div style={{ fontSize:16,fontWeight:700,marginBottom:6 }}>今月を締めますか？</div>
-            <div style={{ background:"#F0F4F0",borderRadius:12,padding:"14px",margin:"16px 0" }}>
-              <div style={{ display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:6 }}><span style={{ color:"#708870" }}>手取り</span><span style={{ fontWeight:600 }}>{yen(income)}</span></div>
-              <div style={{ display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:6 }}><span style={{ color:"#708870" }}>支出合計</span><span style={{ fontWeight:600 }}>{yen(totalOut)}</span></div>
+            <div style={{ background:"#EEF3FF",borderRadius:14,padding:"14px",margin:"16px 0",border:"1px solid #DDE8F8" }}>
+              <div style={{ display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:6 }}><span style={{ color:"#5070A0" }}>手取り</span><span style={{ fontWeight:600 }}>{yen(income)}</span></div>
+              <div style={{ display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:6 }}><span style={{ color:"#5070A0" }}>支出合計</span><span style={{ fontWeight:600 }}>{yen(totalOut)}</span></div>
               {creditExpTotal>0&&<div style={{ display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:6,color:"#4060A0" }}><span>CR利用（別）</span><span>{yen(creditExpTotal)}</span></div>}
-              <div style={{ display:"flex",justifyContent:"space-between",fontSize:15,borderTop:"1px solid #D0D8D0",paddingTop:8,marginTop:4 }}><span style={{ color:"#708870" }}>残り</span><span style={{ fontWeight:700,color:balColor }}>{yen(balance)}</span></div>
+              <div style={{ display:"flex",justifyContent:"space-between",fontSize:15,borderTop:"1px solid #C5D5EE",paddingTop:8,marginTop:4 }}><span style={{ color:"#5070A0" }}>残り</span><span style={{ fontWeight:700,color:balColor }}>{yen(balance)}</span></div>
             </div>
             <div style={{ display:"flex",gap:10 }}>
-              <button onClick={()=>setShowClose(false)} style={{ flex:1,padding:"12px",background:"#EEF2EE",border:"none",borderRadius:10,fontSize:14,cursor:"pointer",color:"#507050" }}>やめる</button>
-              <button onClick={closeMonth} style={{ flex:2,padding:"12px",background:"#1E3828",border:"none",borderRadius:10,fontSize:14,cursor:"pointer",color:"#fff",fontWeight:700 }}>締める</button>
+              <button onClick={()=>setShowClose(false)} style={{ flex:1,padding:"12px",background:"#EEF2FF",border:"none",borderRadius:10,fontSize:14,cursor:"pointer",color:"#4060A0" }}>やめる</button>
+              <button onClick={closeMonth} style={{ flex:2,padding:"12px",background:"#1C3561",border:"none",borderRadius:10,fontSize:14,cursor:"pointer",color:"#fff",fontWeight:700 }}>締める</button>
             </div>
           </div>
         </div>
@@ -887,19 +882,19 @@ function App() {
 
       {showData&&(
         <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:300,display:"flex",alignItems:"flex-end" }} onClick={e=>e.target===e.currentTarget&&setShowData(false)}>
-          <div style={{ background:"#F0F4F0",borderRadius:"20px 20px 0 0",padding:"28px 20px 40px",width:"100%",maxWidth:480,margin:"0 auto" }}>
+          <div style={{ background:"#F5F9FF",borderRadius:"20px 20px 0 0",padding:"28px 20px 40px",width:"100%",maxWidth:480,margin:"0 auto" }}>
             <div style={{ fontSize:15,fontWeight:700,marginBottom:6 }}>データ管理</div>
-            <div style={{ fontSize:12,color:"#90A890",marginBottom:20 }}>全データ（固定支出・履歴・当月・不定期マスター）を対象とします</div>
+            <div style={{ fontSize:12,color:"#88A8CC",marginBottom:20 }}>全データ（固定支出・履歴・当月・不定期マスター）を対象とします</div>
             <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
-              <button onClick={exportData} style={{ padding:"15px",background:"#1E3828",border:"none",borderRadius:12,color:"#C8E8C0",fontSize:14,cursor:"pointer",fontWeight:600,textAlign:"left" }}>
+              <button onClick={exportData} style={{ padding:"15px",background:"#1C3561",border:"none",borderRadius:14,color:"#BCD8FF",fontSize:14,cursor:"pointer",fontWeight:600,textAlign:"left" }}>
                 <span style={{ fontSize:18,marginRight:10 }}>📤</span>書き出し（JSONダウンロード）
               </button>
-              <button onClick={()=>importRef.current.click()} style={{ padding:"15px",background:"#EEF8EE",border:"2px solid #B0D8B0",borderRadius:12,color:"#1E3828",fontSize:14,cursor:"pointer",fontWeight:600,textAlign:"left" }}>
+              <button onClick={()=>importRef.current.click()} style={{ padding:"15px",background:"#EEF4FF",border:"2px solid #B0C4F0",borderRadius:14,color:"#1C3561",fontSize:14,cursor:"pointer",fontWeight:600,textAlign:"left" }}>
                 <span style={{ fontSize:18,marginRight:10 }}>📥</span>読み込み（JSONを選択）
               </button>
               <input ref={importRef} type="file" accept=".json" onChange={importData} style={{ display:"none" }} />
             </div>
-            <button onClick={()=>setShowData(false)} style={{ marginTop:16,width:"100%",padding:"13px",background:"#E0E8E0",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#507050" }}>閉じる</button>
+            <button onClick={()=>setShowData(false)} style={{ marginTop:16,width:"100%",padding:"13px",background:"#E0E8F8",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#4060A0" }}>閉じる</button>
           </div>
         </div>
       )}
