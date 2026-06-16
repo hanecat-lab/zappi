@@ -23,7 +23,7 @@
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useMemo, useEffect } = React;
+const { useState, useMemo, useEffect, useRef } = React;
 
 const SK = {
   fixed:     "kb_fixed",
@@ -33,29 +33,30 @@ const SK = {
 };
 
 const DEFAULT_FIXED = [
-  { id:1, name:"家賃",           amount:40000, day:"末日" },
-  { id:2, name:"電気・ガス",      amount:5959,  day:"5日" },
-  { id:3, name:"携帯(UQ)",       amount:19000, day:"末日" },
-  { id:4, name:"明治保険",        amount:12961, day:"27日" },
-  { id:5, name:"車保険",          amount:9230,  day:"27日" },
-  { id:6, name:"ニコス",          amount:13400, day:"27日" },
-  { id:7, name:"ガソリン",        amount:9000,  day:"月初" },
-  { id:8, name:"整骨院",         amount:7700,  day:"月初" },
-  { id:9, name:"食費",           amount:25000, day:"月初" },
+  { id:1,  name:"家賃",     amount:40000, day:"末日" },
+  { id:2,  name:"電気",     amount:5959,  day:"5日" },
+  { id:10, name:"ガス",     amount:0,     day:"5日" },
+  { id:4,  name:"明治保険", amount:12961, day:"27日" },
+  { id:5,  name:"車保険",   amount:9230,  day:"27日" },
+  { id:6,  name:"ニコス",   amount:13400, day:"27日" },
+  { id:7,  name:"ガソリン", amount:9000,  day:"月初" },
+  { id:8,  name:"整骨院",   amount:7700,  day:"月初" },
+  { id:9,  name:"食費",     amount:25000, day:"月初" },
 ];
 
 const DEFAULT_OCC_MASTER = [
   { id:1, name:"NHK",                    amount:3900,  note:"2ケ月ごと(偶数月)" },
-  { id:2, name:"自動車税",              amount:12900, note:"5月(ペイ払い可)" },
-  { id:3, name:"火災+家更新",          amount:35000, note:"9月・2年ごと(奇数年)" },
+  { id:2, name:"自動車税",               amount:12900, note:"5月(ペイ払い可)" },
+  { id:3, name:"火災+家更新",            amount:35000, note:"9月・2年ごと(奇数年)" },
   { id:4, name:"オイル・エレメント交換", amount:4000,  note:"不定期(前R7.9/26)" },
-  { id:5, name:"カット・FCなど",      amount:4000,  note:"不定期" },
-  { id:6, name:"奨学金 最終回",      amount:63245, note:"2026/07/27" },
+  { id:5, name:"カット・FCなど",         amount:4000,  note:"不定期" },
+  { id:6, name:"奨学金 最終回",          amount:63245, note:"2026/07/27" },
 ];
 
 const DEFAULT_CURRENT = {
   month: currentMonthLabel(),
   income: 220000,
+  keitai: 0,
   merukari: 0,
   paidy: 0,
   nhk: false,
@@ -86,6 +87,8 @@ function App() {
   const [editOcc,   setEditOcc]   = useState(null);
   const [showAddOcc, setShowAddOcc] = useState(false);
   const [newOcc,    setNewOcc]    = useState({ name:"", amount:"", note:"" });
+  const [showData,  setShowData]  = useState(false);
+  const importRef = useRef(null);
 
   useEffect(() => lsSet(SK.fixed,     fixed),     [fixed]);
   useEffect(() => lsSet(SK.history,   history),   [history]);
@@ -93,13 +96,14 @@ function App() {
   useEffect(() => lsSet(SK.occMaster, occMaster), [occMaster]);
 
   const fixedTotal  = useMemo(() => fixed.reduce((s,f) => s + f.amount, 0), [fixed]);
+  const keitaiVal   = Number(current.keitai)   || 0;
   const merukariVal = Number(current.merukari) || 0;
   const paidyVal    = Number(current.paidy)    || 0;
   const monthNum    = Number((current.month.match(/(\d+)月/) || [])[1] || 0);
   const isEvenMonth = monthNum % 2 === 0;
   const nhkVal      = (current.nhk && isEvenMonth) ? 3900 : 0;
   const occTotal    = (current.occasionals||[]).reduce((s,o) => s + (Number(o.amount)||0), 0);
-  const totalOut    = fixedTotal + merukariVal + paidyVal + nhkVal + occTotal;
+  const totalOut    = fixedTotal + keitaiVal + merukariVal + paidyVal + nhkVal + occTotal;
   const income      = Number(current.income) || 0;
   const balance     = income - totalOut;
   const balColor    = balance < 0 ? "#C84040" : balance < 20000 ? "#D4901A" : "#3A7A4A";
@@ -107,7 +111,7 @@ function App() {
   function closeMonth() {
     const rec = {
       month: current.month, income, totalOut, balance,
-      fixed: fixedTotal, merukari: merukariVal, paidy: paidyVal, nhk: nhkVal,
+      fixed: fixedTotal, keitai: keitaiVal, merukari: merukariVal, paidy: paidyVal, nhk: nhkVal,
       occasionals: current.occasionals || [],
       closedAt: new Date().toISOString(),
     };
@@ -145,6 +149,44 @@ function App() {
     setOccMaster(prev => [...prev, item]);
     setNewOcc({ name:"", amount:"", note:"" });
     setShowAddOcc(false);
+  }
+
+  function exportData() {
+    const data = {
+      [SK.fixed]:     fixed,
+      [SK.history]:   history,
+      [SK.current]:   current,
+      [SK.occMaster]: occMaster,
+      exportedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `kakeibo_${current.month.replace("年","-").replace("月","")}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setShowData(false);
+  }
+
+  function importData(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data[SK.fixed])     setFixed(data[SK.fixed]);
+        if (data[SK.history])   setHistory(data[SK.history]);
+        if (data[SK.current])   setCurrent(data[SK.current]);
+        if (data[SK.occMaster]) setOccMaster(data[SK.occMaster]);
+        setShowData(false);
+      } catch {
+        alert("読み込みに失敗しました");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   }
 
   const inp = {
@@ -244,7 +286,14 @@ function App() {
                     <input value={f.name} onChange={e => updateFixed(f.id,"name",e.target.value)} style={{...inp,marginTop:0}} placeholder="項目名" />
                     <input type="number" value={f.amount} onChange={e => updateFixed(f.id,"amount",e.target.value)} style={{...inp,marginTop:0}} inputMode="numeric" />
                     <input value={f.day} onChange={e => updateFixed(f.id,"day",e.target.value)} style={{...inp,marginTop:0}} placeholder="引落日" />
-                    <button onClick={() => setEditFixed(null)} style={{ padding:"10px", background:"#1E3828", border:"none", borderRadius:10, color:"#fff", fontSize:13, cursor:"pointer" }}>完了</button>
+                    <div style={{ display:"flex", gap:8 }}>
+                      <button onClick={() => { setFixed(p=>p.filter(x=>x.id!==f.id)); setEditFixed(null); }} style={{
+                        flex:1, padding:"10px", background:"#FEF0F0", border:"none", borderRadius:10, color:"#C84040", fontSize:13, cursor:"pointer"
+                      }}>削除</button>
+                      <button onClick={() => setEditFixed(null)} style={{
+                        flex:2, padding:"10px", background:"#1E3828", border:"none", borderRadius:10, color:"#fff", fontSize:13, cursor:"pointer"
+                      }}>完了</button>
+                    </div>
                   </div>
                 ) : (
                   <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -365,6 +414,7 @@ function App() {
             <button onClick={() => setPage("history")} style={{ background:"#2E4838", border:"none", borderRadius:8, padding:"6px 10px", color:"#90B890", fontSize:11, cursor:"pointer" }}>履歴</button>
             <button onClick={() => setPage("fixed")} style={{ background:"#2E4838", border:"none", borderRadius:8, padding:"6px 10px", color:"#90B890", fontSize:11, cursor:"pointer" }}>固定支出</button>
             <button onClick={() => setPage("occasional")} style={{ background:"#2E4838", border:"none", borderRadius:8, padding:"6px 10px", color:"#90B890", fontSize:11, cursor:"pointer" }}>不定期</button>
+            <button onClick={() => setShowData(true)} style={{ background:"#2E4838", border:"none", borderRadius:8, padding:"6px 10px", color:"#90B890", fontSize:11, cursor:"pointer" }}>書出/読込</button>
             <button onClick={() => setHideNums(h=>!h)} style={{ background:"#fff", border:"none", borderRadius:8, padding:"4px 8px", fontSize:11, color:"#3E5840", cursor:"pointer" }}>{hideNums ? "(`⊙ω⊙´)" : "(´∩ω∩｀)"}</button>
           </div>
         </div>
@@ -392,6 +442,10 @@ function App() {
         <div style={{ marginTop:12, background:"#fff", borderRadius:14, padding:"16px", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
           <div style={{ fontSize:11, color:"#607860", letterSpacing:"0.1em", marginBottom:12 }}>変動支出</div>
           <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+            <div>
+              <label style={{ fontSize:12, color:"#708870" }}>携帯(UQ)</label>
+              <input type="number" value={current.keitai} onChange={e => setCurrent(c => ({...c, keitai: e.target.value}))} style={{...inp}} inputMode="numeric" placeholder="0" />
+            </div>
             <div>
               <label style={{ fontSize:12, color:"#708870" }}>メルカリ</label>
               <input type="number" value={current.merukari} onChange={e => setCurrent(c => ({...c, merukari: e.target.value}))} style={{...inp}} inputMode="numeric" placeholder="0" />
@@ -457,10 +511,11 @@ function App() {
         <div style={{ marginTop:12, background:"#fff", borderRadius:14, padding:"16px", boxShadow:"0 1px 4px rgba(0,0,0,0.05)" }}>
           <div style={{ fontSize:11, color:"#607860", letterSpacing:"0.1em", marginBottom:10 }}>支出内訳</div>
           {[
-            { label:"固定支出", val:fixedTotal },
-            { label:"メルカリ", val:merukariVal },
-            { label:"Paidy",   val:paidyVal },
-            { label:"NHK",     val:nhkVal },
+            { label:"固定支出",   val:fixedTotal },
+            { label:"携帯(UQ)",   val:keitaiVal },
+            { label:"メルカリ",   val:merukariVal },
+            { label:"Paidy",      val:paidyVal },
+            { label:"NHK",        val:nhkVal },
             { label:"不定期支出", val:occTotal },
           ].filter(r => r.val>0).map((r,i) => (
             <div key={i} style={{ display:"flex", justifyContent:"space-between", fontSize:13, padding:"5px 0", borderBottom:"1px solid #F0F4F0" }}>
@@ -533,6 +588,35 @@ function App() {
               <button onClick={()=>setShowClose(false)} style={{ flex:1, padding:"12px", background:"#EEF2EE", border:"none", borderRadius:10, fontSize:14, cursor:"pointer", color:"#507050" }}>やめる</button>
               <button onClick={closeMonth} style={{ flex:2, padding:"12px", background:"#1E3828", border:"none", borderRadius:10, fontSize:14, cursor:"pointer", color:"#fff", fontWeight:700 }}>締める</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showData && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:300, display:"flex", alignItems:"flex-end" }}
+          onClick={e=>e.target===e.currentTarget&&setShowData(false)}>
+          <div style={{ background:"#F0F4F0", borderRadius:"20px 20px 0 0", padding:"28px 20px 40px", width:"100%", maxWidth:480, margin:"0 auto" }}>
+            <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>データ管理</div>
+            <div style={{ fontSize:12, color:"#90A890", marginBottom:20 }}>全データ（固定支出・履歴・当月・不定期マスター）を対象とします</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              <button onClick={exportData} style={{
+                padding:"15px", background:"#1E3828", border:"none", borderRadius:12,
+                color:"#C8E8C0", fontSize:14, cursor:"pointer", fontWeight:600, textAlign:"left"
+              }}>
+                <span style={{ fontSize:18, marginRight:10 }}>📤</span>書き出し（JSONダウンロード）
+              </button>
+              <button onClick={() => importRef.current.click()} style={{
+                padding:"15px", background:"#EEF8EE", border:"2px solid #B0D8B0", borderRadius:12,
+                color:"#1E3828", fontSize:14, cursor:"pointer", fontWeight:600, textAlign:"left"
+              }}>
+                <span style={{ fontSize:18, marginRight:10 }}>📥</span>読み込み（JSONを選択）
+              </button>
+              <input ref={importRef} type="file" accept=".json" onChange={importData} style={{ display:"none" }} />
+            </div>
+            <button onClick={() => setShowData(false)} style={{
+              marginTop:16, width:"100%", padding:"13px", background:"#E0E8E0",
+              border:"none", borderRadius:12, fontSize:14, cursor:"pointer", color:"#507050"
+            }}>閉じる</button>
           </div>
         </div>
       )}
