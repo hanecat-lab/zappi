@@ -22,7 +22,7 @@
 </head>
 <body>
 <div id="root"></div>
-<!-- v9 -->
+<!-- v10 -->
 <script type="text/babel">
 const { useState, useMemo, useEffect, useRef } = React;
 
@@ -694,17 +694,19 @@ function App() {
             <div style={{ fontSize:10,letterSpacing:"0.15em",color:"#7AAAE0",marginBottom:2 }}>HOUSEHOLD BUDGET</div>
             <div style={{ fontSize:22,fontWeight:700 }}>{current.month}</div>
           </div>
-          <div style={{ display:"flex",gap:6,flexWrap:"wrap",justifyContent:"flex-end" }}>
-            <NavBtn label="履歴"     onClick={()=>setPage("history")} />
-            <NavBtn label="固定"     onClick={()=>setPage("fixed")} />
-            <NavBtn label="不定期"   onClick={()=>setPage("occasional")} />
-            <NavBtn label="出費"     onClick={()=>setPage("expenses")} />
-            <NavBtn label="データ"   onClick={()=>setShowData(true)} />
-            <button onClick={()=>setHideNums(h=>!h)} style={{ background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.2)",borderRadius:8,padding:"4px 8px",fontSize:11,color:"#C8DEFF",cursor:"pointer" }}>{hideNums?"(`⊙ω⊙´)":"(´∩ω∩｀)"}</button>
+          <div style={{ display:"flex",gap:5,justifyContent:"flex-end" }}>
+            <NavBtn label="履歴"   onClick={()=>setPage("history")} />
+            <NavBtn label="固定"   onClick={()=>setPage("fixed")} />
+            <NavBtn label="不定期" onClick={()=>setPage("occasional")} />
+            <NavBtn label="出費"   onClick={()=>setPage("expenses")} />
+            <NavBtn label="データ" onClick={()=>setShowData(true)} />
           </div>
         </div>
         <div style={{ background:"rgba(255,255,255,0.10)",borderRadius:16,padding:"16px",border:"1px solid rgba(255,255,255,0.15)" }}>
-          <div style={{ fontSize:11,color:"#90B8F0",marginBottom:4 }}>今月の残り</div>
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4 }}>
+            <div style={{ fontSize:11,color:"#90B8F0" }}>今月の残り</div>
+            <button onClick={()=>setHideNums(h=>!h)} style={{ background:"rgba(255,255,255,0.12)",border:"1px solid rgba(255,255,255,0.18)",borderRadius:6,padding:"2px 8px",fontSize:10,color:"#90B8F0",cursor:"pointer",letterSpacing:"0.05em" }}>{hideNums?"表示":"隠す"}</button>
+          </div>
           <div style={{ fontSize:34,fontWeight:700,color:hideNums?"#90B8F0":"#fff",letterSpacing:"-0.02em" }}>{maskY(yen(balance))}</div>
           <div style={{ display:"flex",justifyContent:"space-between",fontSize:11,color:"rgba(255,255,255,0.55)",marginTop:8 }}>
             <span>収入 {maskY(yen(income))}</span>
@@ -719,7 +721,10 @@ function App() {
       <div style={{ maxWidth:480,margin:"0 auto",padding:"0 16px" }}>
         <div style={{ marginTop:20,...card }}>
           <div style={{ fontSize:11,color:"#4A6090",letterSpacing:"0.1em",marginBottom:4 }}>今月の手取り</div>
-          <input type="number" value={current.income} onChange={e=>setCurrent(c=>({...c,income:e.target.value}))} onFocus={e=>e.target.select()} style={{...inp,marginTop:0,fontSize:20,fontWeight:700}} inputMode="numeric" />
+          {hideNums
+            ? <div style={{...inp,marginTop:0,fontSize:20,fontWeight:700,color:"#B0C0D8",display:"flex",alignItems:"center"}}>¥----</div>
+            : <input type="number" value={current.income} onChange={e=>setCurrent(c=>({...c,income:e.target.value}))} onFocus={e=>e.target.select()} style={{...inp,marginTop:0,fontSize:20,fontWeight:700}} inputMode="numeric" />
+          }
         </div>
 
         <div style={{ marginTop:12,...card }}>
