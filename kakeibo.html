@@ -400,7 +400,7 @@ function App() {
     <button onClick={onClick} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:8, padding:"5px 8px", color:"#C8DEFF", fontSize:11, cursor:"pointer" }}>{label}</button>
   );
 
-  const SubHeader = ({ title, sub }) => (
+  const SubHeader = ({ title, sub, rightAction }) => (
     <div style={{
       background:"linear-gradient(135deg, #1C3561 0%, #2A4890 100%)", color:"#F0F5FF",
       padding:"16px 20px 18px",
@@ -412,10 +412,11 @@ function App() {
           background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8,
           padding:"6px 12px", color:"#D8EEFF", fontSize:13, cursor:"pointer"
         }}>← 戻る</button>
-        <div>
+        <div style={{ flex:1 }}>
           <div style={{ fontSize:10, letterSpacing:"0.15em", color:"#7AAAE0" }}>{sub}</div>
           <div style={{ fontSize:20, fontWeight:700 }}>{title}</div>
         </div>
+        {rightAction}
       </div>
     </div>
   );
@@ -842,7 +843,9 @@ function App() {
     const expDay = parseInt((newExp.date || "").split("/")[1]) || new Date().getDate();
     return (
       <div style={{ minHeight:"100vh", background:"#EEF3FF", paddingBottom:100 }}>
-        <SubHeader title="出費管理" sub="EXPENSES" />
+        <SubHeader title="出費管理" sub="EXPENSES" rightAction={
+          <button onClick={()=>setShowData(true)} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, padding:"6px 10px", color:"#D8EEFF", fontSize:16, cursor:"pointer" }}>⚙️</button>
+        } />
         <div style={{ maxWidth:480, margin:"0 auto", padding:"16px" }}>
 
           <div style={{ display:"flex", gap:10, marginBottom:12 }}>
