@@ -76,10 +76,10 @@ const DEFAULT_SALARY_HIST = [
   { id:2, date:"R8.4/25~", amount:171000, note:"基本給(改定後)" },
 ];
 const DEFAULT_ALLOWANCES = {
-  nightWeekday: 5700,
-  nightPreHoliday: 6500,
-  nightHoliday: 6000,
-  overtimeRate: 1557,
+  nightWeekday: 5700,      nightWeekdayDate: "",
+  nightPreHoliday: 6500,   nightPreHolidayDate: "",
+  nightHoliday: 6000,      nightHolidayDate: "",
+  overtimeRate: 1557,      overtimeRateDate: "",
 };
 
 const DEFAULT_CURRENT = {
@@ -194,6 +194,8 @@ function App() {
   const [editSalaryId, setEditSalaryId] = useState(null);
   const [editAllowField, setEditAllowField] = useState(null);
   const [editAllowVal, setEditAllowVal]   = useState("");
+  const [editAllowDate, setEditAllowDate] = useState("");
+  const [salaryExpanded, setSalaryExpanded] = useState(false);
   const importRef = useRef(null);
 
   useEffect(() => {
@@ -974,68 +976,82 @@ function App() {
   // ===== 給与・手当 =====
   if (page === "salary") {
     const allowFields = [
-      { key:"nightWeekday",    label:"夜勤（平日）" },
-      { key:"nightPreHoliday", label:"夜勤（休前）" },
-      { key:"nightHoliday",    label:"夜勤（休日）" },
-      { key:"overtimeRate",    label:"残業時給" },
+      { key:"nightWeekday",    label:"夜勤（平日）",  dateKey:"nightWeekdayDate" },
+      { key:"nightPreHoliday", label:"夜勤（休前）",  dateKey:"nightPreHolidayDate" },
+      { key:"nightHoliday",    label:"夜勤（休日）",  dateKey:"nightHolidayDate" },
+      { key:"overtimeRate",    label:"残業時給",      dateKey:"overtimeRateDate" },
     ];
+    const latestSalary = salaryHist.length > 0 ? salaryHist[salaryHist.length - 1] : null;
+    const olderSalary  = salaryHist.slice(0, -1);
+    const renderSalaryCard = s => (
+      <div key={s.id} style={card}>
+        {editSalaryId === s.id ? (
+          <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+            <input value={s.note} onChange={e=>setSalaryHist(p=>p.map(x=>x.id===s.id?{...x,note:e.target.value}:x))} style={{...inp,marginTop:0}} placeholder="基本給、改定後…" />
+            <input type="number" value={s.amount} onChange={e=>setSalaryHist(p=>p.map(x=>x.id===s.id?{...x,amount:Number(e.target.value)}:x))} onFocus={e=>e.target.select()} style={{...inp,marginTop:0}} inputMode="numeric" />
+            <input value={s.date} onChange={e=>setSalaryHist(p=>p.map(x=>x.id===s.id?{...x,date:e.target.value}:x))} style={{...inp,marginTop:0}} placeholder="R7.4/25~" />
+            <div style={{ display:"flex",gap:8 }}>
+              <button onClick={()=>{setSalaryHist(p=>p.filter(x=>x.id!==s.id));setEditSalaryId(null);}} style={{ flex:1,padding:"10px",background:"#FEF0F0",border:"none",borderRadius:10,color:"#C84040",fontSize:13,cursor:"pointer" }}>削除</button>
+              <button onClick={()=>setEditSalaryId(null)} style={{ flex:2,padding:"10px",background:"#1C3561",border:"none",borderRadius:10,color:"#fff",fontSize:13,cursor:"pointer" }}>完了</button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:14,fontWeight:600 }}>{s.note||"基本給"}</div>
+              {s.date && <div style={{ fontSize:11,color:"#88A8CC",marginTop:2 }}>{s.date}</div>}
+            </div>
+            <div style={{ fontWeight:700,fontSize:15 }}>{yen(s.amount)}</div>
+            <button onClick={()=>setEditSalaryId(s.id)} style={{ background:"#EEF2FF",border:"none",borderRadius:8,width:30,height:30,cursor:"pointer",fontSize:14 }}>✏️</button>
+          </div>
+        )}
+      </div>
+    );
     return (
       <div style={{ minHeight:"100vh", background:"#EEF3FF", paddingBottom:40 }}>
         <SubHeader title="給与・手当" sub="SALARY" />
         <div style={{ maxWidth:480, margin:"0 auto", padding:"16px" }}>
+
           <div style={{ marginBottom:8, fontSize:11, fontWeight:700, color:"#4A6090", letterSpacing:"0.08em" }}>月の給料</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:12 }}>
-            {salaryHist.map(s => (
-              <div key={s.id} style={card}>
-                {editSalaryId === s.id ? (
-                  <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
-                    <input value={s.note} onChange={e=>setSalaryHist(p=>p.map(x=>x.id===s.id?{...x,note:e.target.value}:x))} style={{...inp,marginTop:0}} placeholder="基本給、改定後…" />
-                    <input type="number" value={s.amount} onChange={e=>setSalaryHist(p=>p.map(x=>x.id===s.id?{...x,amount:Number(e.target.value)}:x))} onFocus={e=>e.target.select()} style={{...inp,marginTop:0}} inputMode="numeric" />
-                    <input value={s.date} onChange={e=>setSalaryHist(p=>p.map(x=>x.id===s.id?{...x,date:e.target.value}:x))} style={{...inp,marginTop:0}} placeholder="R7.4/25~" />
-                    <div style={{ display:"flex",gap:8 }}>
-                      <button onClick={()=>{setSalaryHist(p=>p.filter(x=>x.id!==s.id));setEditSalaryId(null);}} style={{ flex:1,padding:"10px",background:"#FEF0F0",border:"none",borderRadius:10,color:"#C84040",fontSize:13,cursor:"pointer" }}>削除</button>
-                      <button onClick={()=>setEditSalaryId(null)} style={{ flex:2,padding:"10px",background:"#1C3561",border:"none",borderRadius:10,color:"#fff",fontSize:13,cursor:"pointer" }}>完了</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontSize:14,fontWeight:600 }}>{s.note||"基本給"}</div>
-                      <div style={{ fontSize:11,color:"#88A8CC",marginTop:2 }}>{s.date}</div>
-                    </div>
-                    <div style={{ fontWeight:700,fontSize:15 }}>{yen(s.amount)}</div>
-                    <button onClick={()=>setEditSalaryId(s.id)} style={{ background:"#EEF2FF",border:"none",borderRadius:8,width:30,height:30,cursor:"pointer",fontSize:14 }}>✏️</button>
-                  </div>
-                )}
-              </div>
-            ))}
+          <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:8 }}>
+            {latestSalary && renderSalaryCard(latestSalary)}
+            {olderSalary.length > 0 && (
+              <>
+                <button onClick={()=>setSalaryExpanded(e=>!e)} style={{ padding:"6px 4px",background:"none",border:"none",color:"#88A8CC",fontSize:12,cursor:"pointer",textAlign:"left" }}>
+                  {salaryExpanded ? "▲ 履歴を隠す" : `▼ 過去の給与履歴（${olderSalary.length}件）`}
+                </button>
+                {salaryExpanded && [...olderSalary].reverse().map(s => renderSalaryCard(s))}
+              </>
+            )}
           </div>
           <button onClick={()=>setShowAddSalary(true)} style={{ marginBottom:20,width:"100%",padding:"13px",background:"transparent",border:"2px dashed #A8C0EC",borderRadius:14,color:"#3B6FCC",fontSize:14,cursor:"pointer",fontWeight:600 }}>＋ 基本給を追加</button>
 
           <div style={{ marginBottom:8, fontSize:11, fontWeight:700, color:"#4A6090", letterSpacing:"0.08em" }}>夜勤・残業手当</div>
           <div style={card}>
-            {allowFields.map(({ key, label }, i) => (
-              <div key={key} style={{ display:"flex",alignItems:"center",gap:8,padding:"10px 0",borderBottom: i < allowFields.length-1 ? "1px solid #EEF3FF" : "none" }}>
-                <div style={{ flex:1,fontSize:13,color:"#4A6090" }}>{label}</div>
-                {editAllowField === key ? (
-                  <>
-                    <input type="number" value={editAllowVal} onChange={e=>setEditAllowVal(e.target.value)} onFocus={e=>e.target.select()} style={{ width:100,padding:"6px 8px",border:"1px solid #C5D5EE",borderRadius:8,fontSize:14,color:"#1A2840",outline:"none" }} inputMode="decimal" autoFocus />
-                    <button onClick={()=>{setAllowances(a=>({...a,[key]:Number(editAllowVal)}));setEditAllowField(null);}} style={{ padding:"6px 12px",background:"#1C3561",border:"none",borderRadius:8,color:"#fff",fontSize:13,cursor:"pointer" }}>完了</button>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ fontWeight:700,fontSize:14 }}>{yen(allowances[key])}</div>
-                    {key !== "overtimeRate" && <div style={{ fontSize:11,color:"#88A8CC" }}>1回</div>}
-                    {key === "overtimeRate" && <div style={{ fontSize:11,color:"#88A8CC" }}>1時間</div>}
-                    <button onClick={()=>{setEditAllowField(key);setEditAllowVal(String(allowances[key]));}} style={{ background:"#EEF2FF",border:"none",borderRadius:8,width:28,height:28,cursor:"pointer",fontSize:13 }}>✏️</button>
-                  </>
+            {allowFields.map(({ key, label, dateKey }, i) => (
+              <div key={key} style={{ padding:"10px 0",borderBottom: i < allowFields.length-1 ? "1px solid #EEF3FF" : "none" }}>
+                <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+                  <div style={{ flex:1,fontSize:13,color:"#4A6090" }}>{label}</div>
+                  {editAllowField === key ? (
+                    <button onClick={()=>{setAllowances(a=>({...a,[key]:Number(editAllowVal),[dateKey]:editAllowDate}));setEditAllowField(null);}} style={{ padding:"6px 12px",background:"#1C3561",border:"none",borderRadius:8,color:"#fff",fontSize:13,cursor:"pointer" }}>完了</button>
+                  ) : (
+                    <>
+                      <div style={{ textAlign:"right" }}>
+                        <div style={{ fontWeight:700,fontSize:14 }}>{yen(allowances[key])}</div>
+                        {allowances[dateKey] && <div style={{ fontSize:10,color:"#88A8CC",marginTop:1 }}>{allowances[dateKey]}</div>}
+                      </div>
+                      <button onClick={()=>{setEditAllowField(key);setEditAllowVal(String(allowances[key]));setEditAllowDate(allowances[dateKey]||"");}} style={{ background:"#EEF2FF",border:"none",borderRadius:8,width:28,height:28,cursor:"pointer",fontSize:13 }}>✏️</button>
+                    </>
+                  )}
+                </div>
+                {editAllowField === key && (
+                  <div style={{ display:"flex",gap:8,marginTop:8 }}>
+                    <input type="number" value={editAllowVal} onChange={e=>setEditAllowVal(e.target.value)} onFocus={e=>e.target.select()} style={{ flex:1,padding:"8px",border:"1px solid #C5D5EE",borderRadius:8,fontSize:14,color:"#1A2840",outline:"none" }} inputMode="decimal" autoFocus />
+                    <input value={editAllowDate} onChange={e=>setEditAllowDate(e.target.value)} style={{ flex:1,padding:"8px",border:"1px solid #C5D5EE",borderRadius:8,fontSize:13,color:"#1A2840",outline:"none" }} placeholder="R7.4/25~" />
+                  </div>
                 )}
               </div>
             ))}
-            <div style={{ display:"flex",alignItems:"center",gap:8,paddingTop:12,marginTop:4,borderTop:"1px solid #DDE8F8" }}>
-              <div style={{ flex:1,fontSize:13,color:"#4A6090" }}>夜勤5回の目安</div>
-              <div style={{ fontWeight:700,fontSize:15,color:"#3B6FCC" }}>{yen(allowances.nightWeekday * 5)}</div>
-            </div>
           </div>
         </div>
 
