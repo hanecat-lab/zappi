@@ -36,6 +36,9 @@ const SK = {
   salary:     "kb_salary",
   allowances: "kb_allowances",
   hideNums:   "kb_hide_nums",
+  hideExpNums: "kb_hide_exp_nums",
+  plannedEvents: "kb_planned_events",
+  includePlanned: "kb_include_planned",
 };
 
 const DEFAULT_EXP_CATS = [
@@ -198,6 +201,11 @@ function App() {
   const [editAllowVal, setEditAllowVal]   = useState("");
   const [editAllowDate, setEditAllowDate] = useState("");
   const [salaryExpanded, setSalaryExpanded] = useState(false);
+  const [hideExpNums,    setHideExpNums]    = useState(() => lsGet(SK.hideExpNums, false));
+  const [plannedEvents,  setPlannedEvents]  = useState(() => lsGet(SK.plannedEvents, []));
+  const [includePlanned, setIncludePlanned] = useState(() => lsGet(SK.includePlanned, false));
+  const [showAddPlanned, setShowAddPlanned] = useState(false);
+  const [newPlanned,     setNewPlanned]     = useState({ name:"", amount:"" });
   const importRef = useRef(null);
 
   useEffect(() => {
@@ -223,7 +231,10 @@ function App() {
   useEffect(() => lsSet(SK.bonusHist,  bonusHist), [bonusHist]);
   useEffect(() => lsSet(SK.salary,     salaryHist), [salaryHist]);
   useEffect(() => lsSet(SK.allowances, allowances), [allowances]);
-  useEffect(() => lsSet(SK.hideNums,   hideNums),   [hideNums]);
+  useEffect(() => lsSet(SK.hideNums,      hideNums),      [hideNums]);
+  useEffect(() => lsSet(SK.hideExpNums,   hideExpNums),   [hideExpNums]);
+  useEffect(() => lsSet(SK.plannedEvents, plannedEvents), [plannedEvents]);
+  useEffect(() => lsSet(SK.includePlanned, includePlanned), [includePlanned]);
 
   const varItems      = current.varItems  || DEFAULT_VAR_ITEMS;
   const expenses      = current.expenses  || [];
@@ -238,9 +249,11 @@ function App() {
   const bonusItemsTotal = bonusItems.reduce((s,i) => s + (Number(i.amount)||0), 0);
   const bonusBal      = (Number(current.bonusIncome)||0) - bonusItemsTotal;
   const occTotal      = (current.occasionals||[]).reduce((s,o) => s + (Number(o.amount)||0), 0);
+  const plannedTotal  = plannedEvents.reduce((s,e) => s + (Number(e.amount)||0), 0);
   const totalOut      = fixedTotal + varTotal + nhkVal + occTotal + cashExpTotal;
   const income        = Number(current.income) || 0;
   const balance       = income - totalOut;
+  const displayBalance = balance - (includePlanned ? plannedTotal : 0);
   const balColor      = balance < 0 ? "#C84040" : balance < 20000 ? "#D4901A" : "#2A7A5A";
 
   function closeMonth() {
@@ -394,7 +407,8 @@ function App() {
     boxShadow:"0 2px 10px rgba(30,60,180,0.07)", border:"1px solid #DDE8F8"
   };
 
-  const maskY = v => hideNums ? "¥----" : v;
+  const maskY = v => hideNums    ? "¥----" : v;
+  const maskE = v => hideExpNums ? "¥----" : v;
 
   const NavBtn = ({ label, onClick }) => (
     <button onClick={onClick} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:8, padding:"5px 8px", color:"#C8DEFF", fontSize:11, cursor:"pointer" }}>{label}</button>
@@ -844,19 +858,22 @@ function App() {
     return (
       <div style={{ minHeight:"100vh", background:"#EEF3FF", paddingBottom:100 }}>
         <SubHeader title="出費管理" sub="EXPENSES" rightAction={
-          <button onClick={()=>setShowData(true)} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, padding:"6px 10px", color:"#D8EEFF", fontSize:16, cursor:"pointer" }}>⚙️</button>
+          <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+            <button onClick={()=>setHideExpNums(h=>!h)} style={{ background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.18)", borderRadius:6, padding:"2px 8px", fontSize:10, color:"#D8EEFF", cursor:"pointer", letterSpacing:"0.05em" }}>{hideExpNums?"表示":"隠す"}</button>
+            <button onClick={()=>setShowData(true)} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, padding:"6px 10px", color:"#D8EEFF", fontSize:16, cursor:"pointer" }}>⚙️</button>
+          </div>
         } />
         <div style={{ maxWidth:480, margin:"0 auto", padding:"16px" }}>
 
           <div style={{ display:"flex", gap:10, marginBottom:12 }}>
             <div style={{ flex:1, ...card, padding:"14px", textAlign:"center" }}>
               <div style={{ fontSize:11, color:"#4A6090", marginBottom:4 }}>現金支出</div>
-              <div style={{ fontSize:20, fontWeight:700, color:"#1A2840" }}>{maskY(yen(cashExpTotal))}</div>
+              <div style={{ fontSize:20, fontWeight:700, color:"#1A2840" }}>{maskE(yen(cashExpTotal))}</div>
               <div style={{ fontSize:10, color:"#88A8CC", marginTop:2 }}>残高から引く</div>
             </div>
             <div style={{ flex:1, ...card, padding:"14px", textAlign:"center" }}>
               <div style={{ fontSize:11, color:"#88A8CC", marginBottom:4 }}>クレジット</div>
-              <div style={{ fontSize:20, fontWeight:700, color:"#4060A0" }}>{maskY(yen(creditExpTotal))}</div>
+              <div style={{ fontSize:20, fontWeight:700, color:"#4060A0" }}>{maskE(yen(creditExpTotal))}</div>
               <div style={{ fontSize:10, color:"#B0C0D8", marginTop:2 }}>別管理</div>
             </div>
           </div>
@@ -921,7 +938,7 @@ function App() {
                     <div style={{ fontSize:14 }}>{e.name}</div>
                     <div style={{ fontSize:10, marginTop:2, color: catColor(e.catId), fontWeight:600 }}>{catName(e.catId)}</div>
                   </div>
-                  <div style={{ fontWeight:700, fontSize:14, flexShrink:0 }}>{maskY(yen(e.amount))}</div>
+                  <div style={{ fontWeight:700, fontSize:14, flexShrink:0 }}>{maskE(yen(e.amount))}</div>
                   <div style={{
                     fontSize:10, padding:"3px 8px", borderRadius:10, flexShrink:0,
                     background: e.type==="cash" ? "#EEF2FF" : "#E8EEF8",
@@ -933,6 +950,89 @@ function App() {
               ))}
             </div>
           )}
+
+
+          {expenses.length > 0 && (() => {
+            const catTotals = expCats
+              .map(c => ({ ...c, total: expenses.filter(e => e.catId === c.id).reduce((s,e) => s + (Number(e.amount)||0), 0) }))
+              .filter(c => c.total > 0);
+            const uncatTotal = expenses.filter(e => !expCats.find(c => c.id === e.catId)).reduce((s,e) => s + (Number(e.amount)||0), 0);
+            if (catTotals.length === 0 && uncatTotal === 0) return null;
+            return (
+              <div style={{ ...card, marginBottom:12, marginTop:12 }}>
+                <div style={{ fontSize:11, color:"#4A6090", letterSpacing:"0.1em", marginBottom:6 }}>カテゴリ別合計</div>
+                {catTotals.map(c => (
+                  <div key={c.id} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:"1px solid #EEF3FF", fontSize:13 }}>
+                    <span style={{ color:catColor(c.id), fontWeight:600 }}>{c.name}</span>
+                    <span style={{ fontWeight:700 }}>{maskE(yen(c.total))}</span>
+                  </div>
+                ))}
+                {uncatTotal > 0 && (
+                  <div style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", fontSize:13 }}>
+                    <span style={{ color:"#88A8CC" }}>未分類</span>
+                    <span style={{ fontWeight:700 }}>{maskE(yen(uncatTotal))}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          <div style={{ ...card, marginBottom:12 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+              <div style={{ fontSize:11, color:"#4A6090", letterSpacing:"0.1em" }}>イベント予定</div>
+              <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                <span style={{ fontSize:10, color:"#88A8CC" }}>残りに反映</span>
+                <button onClick={()=>setIncludePlanned(v=>!v)} style={{
+                  width:38, height:20, borderRadius:10, border:"none", cursor:"pointer",
+                  background: includePlanned ? "#1C3561" : "#C8D8F0",
+                  position:"relative", transition:"background 0.2s", flexShrink:0
+                }}>
+                  <div style={{
+                    width:16, height:16, borderRadius:8, background:"#fff",
+                    position:"absolute", top:2, transition:"left 0.2s",
+                    left: includePlanned ? 20 : 2, boxShadow:"0 1px 3px rgba(0,0,0,0.2)"
+                  }} />
+                </button>
+              </div>
+            </div>
+            {plannedEvents.length > 0 && (
+              <div style={{ display:"flex", flexDirection:"column", gap:2, marginBottom:8 }}>
+                {plannedEvents.map(ev => (
+                  <div key={ev.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #EEF3FF" }}>
+                    <span style={{ flex:1, fontSize:13 }}>{ev.name}</span>
+                    <span style={{ fontWeight:700, fontSize:13 }}>{maskE(yen(Number(ev.amount)||0))}</span>
+                    <button onClick={()=>setPlannedEvents(p=>p.filter(x=>x.id!==ev.id))} style={{ background:"#FEF0F0", border:"none", borderRadius:6, width:24, height:24, cursor:"pointer", fontSize:11, color:"#C84040" }}>×</button>
+                  </div>
+                ))}
+                {includePlanned && plannedTotal > 0 && (
+                  <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"#5070A0", paddingTop:4, fontWeight:700 }}>
+                    <span>予定合計</span><span>{maskE(yen(plannedTotal))}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            {plannedEvents.length === 0 && !showAddPlanned && (
+              <div style={{ fontSize:12, color:"#B0C0D8", textAlign:"center", padding:"6px 0 8px" }}>予定なし</div>
+            )}
+            {showAddPlanned ? (
+              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                <input value={newPlanned.name} onChange={e=>setNewPlanned(p=>({...p,name:e.target.value}))} style={{...inp,marginTop:0}} placeholder="ライブ、コンカフェ…" autoFocus />
+                <input type="number" value={newPlanned.amount} onChange={e=>setNewPlanned(p=>({...p,amount:e.target.value}))} onFocus={e=>e.target.select()} style={{...inp,marginTop:0}} inputMode="numeric" placeholder="0" />
+                <div style={{ display:"flex", gap:8 }}>
+                  <button onClick={()=>{setShowAddPlanned(false);setNewPlanned({name:"",amount:""});}} style={{ flex:1,padding:"9px",background:"#E0E8F8",border:"none",borderRadius:10,fontSize:13,cursor:"pointer",color:"#4060A0" }}>キャンセル</button>
+                  <button onClick={()=>{
+                    if (!newPlanned.name.trim()) return;
+                    setPlannedEvents(p=>[...p,{id:Date.now(),name:newPlanned.name.trim(),amount:Number(newPlanned.amount)||0}]);
+                    setNewPlanned({name:"",amount:""});
+                    setShowAddPlanned(false);
+                  }} style={{ flex:2,padding:"9px",background:"#1C3561",border:"none",borderRadius:10,fontSize:13,cursor:"pointer",color:"#fff",fontWeight:700 }}>追加</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={()=>setShowAddPlanned(true)} style={{ width:"100%",padding:"8px",background:"transparent",border:"1.5px dashed #A8C0EC",borderRadius:8,color:"#3B6FCC",fontSize:12,cursor:"pointer",fontWeight:600 }}>＋ 予定を追加</button>
+            )}
+          </div>
+
         </div>
 
         <div style={{ position:"fixed", bottom:0, left:0, right:0, padding:"12px 16px 28px", background:"#EEF3FF", borderTop:"1px solid #DDE8F8", maxWidth:480, margin:"0 auto" }}>
@@ -1149,13 +1249,13 @@ function App() {
             <div style={{ fontSize:11,color:"#90B8F0" }}>今月の残り</div>
             <button onClick={()=>setHideNums(h=>!h)} style={{ background:"rgba(255,255,255,0.12)",border:"1px solid rgba(255,255,255,0.18)",borderRadius:6,padding:"2px 8px",fontSize:10,color:"#90B8F0",cursor:"pointer",letterSpacing:"0.05em" }}>{hideNums?"表示":"隠す"}</button>
           </div>
-          <div style={{ fontSize:34,fontWeight:700,color:hideNums?"#90B8F0":"#fff",letterSpacing:"-0.02em" }}>{maskY(yen(balance))}</div>
+          <div style={{ fontSize:34,fontWeight:700,color:hideNums?"#90B8F0":"#fff",letterSpacing:"-0.02em" }}>{maskY(yen(displayBalance))}</div>
           <div style={{ display:"flex",justifyContent:"space-between",fontSize:11,color:"rgba(255,255,255,0.55)",marginTop:8 }}>
             <span>収入 {maskY(yen(income))}</span>
-            <span>支出 {maskY(yen(totalOut))}</span>
+            <span>支出 {maskY(yen(totalOut))}{includePlanned && plannedTotal > 0 ? `＋予定${maskY(yen(plannedTotal))}` : ""}</span>
           </div>
           <div style={{ marginTop:10,background:"rgba(0,0,0,0.25)",borderRadius:4,height:5,overflow:"hidden" }}>
-            <div style={{ height:"100%",borderRadius:4,width:income>0?`${Math.min((totalOut/income)*100,100)}%`:"0%",background:totalOut/income>0.9?"#C84040":totalOut/income>0.7?"#D4901A":"#60A8F0",transition:"width 0.4s ease" }} />
+            <div style={{ height:"100%",borderRadius:4,width:income>0?`${Math.min(((totalOut+(includePlanned?plannedTotal:0))/income)*100,100)}%`:"0%",background:(totalOut+(includePlanned?plannedTotal:0))/income>0.9?"#C84040":(totalOut+(includePlanned?plannedTotal:0))/income>0.7?"#D4901A":"#60A8F0",transition:"width 0.4s ease" }} />
           </div>
         </div>
       </div>
