@@ -190,6 +190,7 @@ function App() {
   const [fuelRecords,  setFuelRecords]  = useState(() => lsGet(SK.fuelRecords, []));
   const [odoMode,      setOdoMode]      = useState("diff"); // "diff"=走行km入力 | "abs"=絶対値入力
   const [showForm,     setShowForm]     = useState(true);
+  const [calcMode,     setCalcMode]     = useState("amount"); // "amount"=金額固定 | "liters"=給油量固定
 
   const [newFuel,      setNewFuel]      = useState(() => {
     const records = lsGet(SK.fuelRecords, []);
@@ -1186,11 +1187,19 @@ function App() {
     const calcFuel = (field, value, state) => {
       const next = { ...state, [field]: value };
       const l = Number(next.liters);
+      const p = Number(next.pricePerLiter);
       const a = Number(next.amount);
-      if ((field === "liters" || field === "amount") && Number(next.liters) > 0 && Number(next.amount) > 0)
-        next.pricePerLiter = String(Math.round(Number(next.amount) / Number(next.liters)));
-      else if (field === "pricePerLiter" && Number(value) > 0 && a > 0)
-        next.liters = String(Math.round(a / Number(value) * 100) / 100);
+      if (calcMode === "amount") {
+        if ((field === "liters" || field === "amount") && l > 0 && a > 0)
+          next.pricePerLiter = String(Math.round(a / l));
+        else if (field === "pricePerLiter" && p > 0 && a > 0)
+          next.liters = String(Math.round(a / p * 100) / 100);
+      } else {
+        if ((field === "pricePerLiter" || field === "liters") && p > 0 && l > 0)
+          next.amount = String(Math.round(p * l));
+        else if (field === "amount" && a > 0 && l > 0)
+          next.pricePerLiter = String(Math.round(a / l));
+      }
       return next;
     };
     const getFuelL = f => {
@@ -1310,7 +1319,8 @@ function App() {
             )}
 
             <div style={{ background:"#fff", border:"1px solid #c5d8ff", borderRadius:16, overflow:"hidden", marginBottom:12 }}>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", borderBottom:"1px solid #e8f0ff" }}>
+              <div style={{ display:"flex", alignItems:"center", borderBottom:"1px solid #e8f0ff", paddingRight:8 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", flex:1 }}>
                 {["単価", "給油量", "金額"].map((label, i) => (
                   <div key={label} style={{ padding:"8px 14px", fontSize:11, color:"#4A6090", fontWeight:600,
                     borderRight: i < 2 ? "1px solid #e8f0ff" : "none" }}>
@@ -1325,6 +1335,15 @@ function App() {
                     )}
                   </div>
                 ))}
+              </div>
+              <button onClick={()=>setCalcMode(m=>m==="amount"?"liters":"amount")} style={{
+                fontSize:9, padding:"3px 7px", borderRadius:6, border:"1px solid #c5d8ff",
+                background: calcMode==="amount" ? "#EEF4FF" : "#FFF0F0",
+                color: calcMode==="amount" ? "#2348b8" : "#A04040",
+                cursor:"pointer", flexShrink:0, fontWeight:700
+              }}>
+                {calcMode==="amount" ? "¥固定" : "L固定"}
+              </button>
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr" }}>
                 <input type="number" value={newFuel.pricePerLiter} onChange={e=>setNewFuel(f=>calcFuel("pricePerLiter",e.target.value,f))} onFocus={e=>e.target.select()} placeholder=""
