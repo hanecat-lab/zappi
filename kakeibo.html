@@ -1149,6 +1149,10 @@ function App() {
     const totalKm    = sorted.length >= 2 ? sorted[sorted.length-1].odometer - sorted[0].odometer : null;
     const totalLiter = sorted.slice(1).reduce((s,r) => s + r.liters, 0);
     const avgEff     = (totalKm && totalLiter > 0) ? totalKm / totalLiter : null;
+    const lastOdo    = sorted.length > 0 ? sorted[sorted.length-1].odometer : null;
+    const avgLiters  = sorted.length >= 2 ? totalLiter / (sorted.length - 1) : null;
+    const nextDistEst = (avgEff && avgLiters) ? Math.round(avgEff * avgLiters) : null;
+    const nextOdoEst  = (lastOdo != null && nextDistEst) ? lastOdo + nextDistEst : null;
     const last4      = sorted.slice(-4);
     const last3Km    = last4.length >= 2 ? last4[last4.length-1].odometer - last4[0].odometer : null;
     const last3Liter = last4.slice(1).reduce((s,r) => s + r.liters, 0);
@@ -1278,8 +1282,18 @@ function App() {
             </div>
           )}
 
+          {nextOdoEst != null && (
+            <div style={{ ...card, marginBottom:12, padding:"11px 16px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <span style={{ fontSize:11, color:"#4A6090" }}>⛽ 次回給油目安</span>
+              <span style={{ fontSize:13, fontWeight:700, color:"#2348b8" }}>
+                あと約 {nextDistEst.toLocaleString()} km
+                <span style={{ fontSize:11, fontWeight:400, color:"#88A8CC", marginLeft:6 }}>ODO ~{nextOdoEst.toLocaleString()}</span>
+              </span>
+            </div>
+          )}
+
           <div style={{ marginBottom:16 }}>
-            <div style={{ background:"#fff", border:"1px solid #c5d8ff", borderRadius:16, marginBottom:10, display:"flex", alignItems:"center", padding:"10px 16px", gap:10 }}>
+            <div style={{ background:"#fff", border:"1px solid #c5d8ff", borderRadius:16, marginBottom: lastOdo != null ? 4 : 10, display:"flex", alignItems:"center", padding:"10px 16px", gap:10 }}>
               <span style={{ fontSize:14 }}>📅</span>
               <input type="date" value={newFuel.date || today} onChange={e=>setNewFuel(f=>calcFuel("date",e.target.value,f))}
                 style={{ border:"none", background:"transparent", fontSize:12, color:"#88A8CC", outline:"none", fontWeight:500, fontFamily:"inherit", width:110, flexShrink:0 }} />
@@ -1289,6 +1303,9 @@ function App() {
                 style={{ border:"none", background:"transparent", fontSize:20, color:"#1A2840", outline:"none", fontWeight:700, fontFamily:"inherit", flex:1, minWidth:0 }} inputMode="numeric" />
               <span style={{ fontSize:12, color:"#88A8CC", flexShrink:0 }}>km</span>
             </div>
+            {lastOdo != null && (
+              <div style={{ fontSize:11, color:"#B0C4E0", textAlign:"right", marginBottom:10, paddingRight:4 }}>前回 {lastOdo.toLocaleString()} km</div>
+            )}
 
             <div style={{ background:"#fff", border:"1px solid #c5d8ff", borderRadius:16, overflow:"hidden", marginBottom:12 }}>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", borderBottom:"1px solid #e8f0ff" }}>
