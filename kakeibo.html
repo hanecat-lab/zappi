@@ -882,10 +882,9 @@ function App() {
       const idx = expCats.findIndex(c => c.id === id);
       return ["#3B70CC","#8050C8","#C04060","#2890A8","#A038B0","#2870C8","#8850C0","#4858A8"][idx] || "#5068A8";
     };
-    const expMonthList = [
-      { key: current.month, label: current.month, expenses: current.expenses || [] },
-      ...(history || []).map(h => ({ key: h.month, label: h.month, expenses: h.expenses || [] }))
-    ].filter(m => m.expenses.length > 0);
+    const expMonthList = (history || [])
+      .map(h => ({ key: h.month, label: h.month, expenses: h.expenses || [] }))
+      .filter(m => m.expenses.length > 0);
     const toggleExpMonth = key => setOpenExpMonths(prev => {
       const next = new Set(prev);
       next.has(key) ? next.delete(key) : next.add(key);
@@ -1082,6 +1081,7 @@ function App() {
                 {expMonthList.map(m => {
                   const total = m.expenses.reduce((s,e) => s+(e.amount||0), 0);
                   const isOpen = openExpMonths.has(m.key);
+                  const mYear = (m.label.match(/(\d+)年/) || [])[1] || "";
                   return (
                     <div key={m.key} style={{ background:"#fff", borderRadius:14, border:"1px solid #DDE8F8", overflow:"hidden" }}>
                       <button onClick={()=>toggleExpMonth(m.key)} style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 16px", background:"transparent", border:"none", cursor:"pointer" }}>
@@ -1114,7 +1114,7 @@ function App() {
                           })()}
                           {[...m.expenses].reverse().map(e => (
                             <div key={e.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 0", borderBottom:"1px solid #f5f8ff" }}>
-                              <span style={{ fontSize:11, color:"#88A8CC", minWidth:32 }}>{e.date}</span>
+                              <span style={{ fontSize:11, color:"#88A8CC", minWidth:48 }}>{mYear ? mYear+"/"+e.date : e.date}</span>
                               <span style={{ fontSize:13, flex:1, color:"#1A2840" }}>{e.name}</span>
                               <span style={{ fontSize:11, padding:"2px 7px", borderRadius:8,
                                 background: catColor(e.catId)+"22",
