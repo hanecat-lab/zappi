@@ -687,6 +687,22 @@
     border-radius: 10px; padding: 11px 13px; margin-top: 6px;
     font-size: 0.88rem; color: var(--text); line-height: 1.6;
   }
+
+  .entry-memo-wrap { margin-top: 8px; border-top: 1px solid rgba(0,229,255,0.12); padding-top: 8px; }
+  .memo-toggle {
+    background: transparent; border: none; cursor: pointer;
+    color: var(--neon-cyan); font-size: 0.76rem; padding: 2px 0;
+    display: inline-flex; align-items: center; gap: 6px;
+    text-shadow: 0 0 6px rgba(0,229,255,0.35);
+  }
+  .memo-toggle-icon { font-size: 0.6rem; transition: transform .15s; }
+  .entry-memo {
+    display: none; white-space: pre-wrap; word-break: break-word;
+    margin-top: 6px; padding: 9px 11px;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    font-size: 0.82rem; color: var(--text); line-height: 1.6;
+  }
+  .entry-memo.open { display: block; }
   </style>
 </head>
 <body>
@@ -1075,6 +1091,13 @@ function renderList() {
           ${mr('雰囲気', e.ratings.atmosphere)}
         </div>
         ${dist ? `<div class="entry-dist">📍 現在地から ${dist}</div>` : ''}
+        ${e.memo ? `
+        <div class="entry-memo-wrap">
+          <button class="memo-toggle" onclick="toggleMemo('${e.id}', event)">
+            <span class="memo-toggle-icon" id="mi-${e.id}">▶</span> 一言メモ
+          </button>
+          <div class="entry-memo" id="memo-${e.id}">${esc(e.memo)}</div>
+        </div>` : ''}
       </div>`;
   }).join('');
 }
@@ -1085,6 +1108,14 @@ function mr(label, val) {
     <div class="mini-bar"><div class="mini-bar-fill" style="width:${val}%"></div></div>
     <span class="mini-score">${val}</span>
   </div>`;
+}
+
+function toggleMemo(id, ev) {
+  ev.stopPropagation();
+  const memo = document.getElementById('memo-' + id);
+  const icon = document.getElementById('mi-' + id);
+  const open = memo.classList.toggle('open');
+  icon.textContent = open ? '▼' : '▶';
 }
 
 function catClass(cat) {
