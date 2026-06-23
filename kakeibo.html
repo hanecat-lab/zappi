@@ -2173,7 +2173,7 @@ function App() {
             return (
               <div style={{ marginTop:8 }}>
                 <div style={{ background:"#fff", borderRadius:12, border:"1px solid #DDE8F8", padding:"14px 16px", marginBottom:14, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                  <span style={{ fontSize:12, color:"#4A6090" }}>{ldThreshold}km超え 総計</span>
+                  <span style={{ fontSize:12, color:"#4A6090" }}>{ldThreshold}km⬆️ 総計</span>
                   <span style={{ fontSize:22, fontWeight:700, color:"#C04040" }}>{totalLongCount}<span style={{ fontSize:13, fontWeight:600, marginLeft:2 }}>回</span></span>
                 </div>
                 <div style={{ background:"#fff", borderRadius:12, border:"1px solid #DDE8F8", padding:"14px 16px", marginBottom:14 }}>
@@ -2210,7 +2210,7 @@ function App() {
                         <span style={{ fontSize:12, fontWeight:700, color:"#4A6090", letterSpacing:"0.06em" }}>{fmtMo(mk)}</span>
                         <span style={{ display:"flex", alignItems:"center", gap:8 }}>
                           <span style={{ fontSize:11, color:"#88A8CC" }}>計{Math.round(records.reduce((s,r)=>s+(r.distance||0),0))}km</span>
-                          <span style={{ fontSize:11, fontWeight:700, color:"#C04040", background:"#FDEAEA", borderRadius:6, padding:"2px 8px" }}>超え {monthLongCount}回</span>
+                          <span style={{ fontSize:11, fontWeight:700, color:"#C04040", background:"#FDEAEA", borderRadius:6, padding:"2px 8px" }}>⬆️ {monthLongCount}回</span>
                           <span style={{ fontSize:11, color:"#B0C4E0" }}>{ldIsOpen(mk) ? "▲" : "▼"}</span>
                         </span>
                       </button>
