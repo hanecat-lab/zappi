@@ -679,6 +679,14 @@
     box-shadow: 0 0 12px rgba(0,229,255,0.35);
   }
   .cat-add-btn:active { transform: scale(0.95); }
+
+  .form-textarea { resize: vertical; min-height: 64px; line-height: 1.5; font-family: inherit; }
+  .detail-memo {
+    white-space: pre-wrap; word-break: break-word;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 13px; margin-top: 6px;
+    font-size: 0.88rem; color: var(--text); line-height: 1.6;
+  }
   </style>
 </head>
 <body>
@@ -822,6 +830,11 @@
       <span class="rating-label">店の雰囲気</span>
       <input type="range" min="0" max="100" value="50" id="r-atmosphere" oninput="syncRating('atmosphere',this)">
       <span class="rating-value" id="rv-atmosphere">50</span>
+    </div>
+
+    <div class="form-group" style="margin-top:16px">
+      <label class="form-label">一言メモ</label>
+      <textarea class="form-input form-textarea" id="f-memo" rows="3" placeholder="感想・特徴・次回メモなど"></textarea>
     </div>
 
     <button class="submit-btn" onclick="saveEntry()">保存する</button>
@@ -1231,6 +1244,7 @@ function openAddForm() {
   document.getElementById('f-location').value = '';
   document.getElementById('f-amount').value = '';
   document.getElementById('f-course').value = '';
+  document.getElementById('f-memo').value = '';
   document.getElementById('gps-status').textContent = '未記録';
   RATINGS.forEach(k => setSlider(k, 50));
   renderCatSelect();
@@ -1251,6 +1265,7 @@ function openEditForm(id) {
   document.getElementById('f-location').value = e.locationMemo || '';
   document.getElementById('f-amount').value = e.amount || '';
   document.getElementById('f-course').value = e.course || '';
+  document.getElementById('f-memo').value = e.memo || '';
   document.getElementById('gps-status').textContent = e.gps
     ? e.gps.lat.toFixed(5) + ', ' + e.gps.lng.toFixed(5)
     : '未記録';
@@ -1298,6 +1313,7 @@ function saveEntry() {
     gps:          formGPS,
     amount:       parseInt(document.getElementById('f-amount').value) || 0,
     course:       document.getElementById('f-course').value.trim(),
+    memo:         document.getElementById('f-memo').value.trim(),
     ratings: {
       appearance:   parseInt(document.getElementById('r-appearance').value),
       friendliness: parseInt(document.getElementById('r-friendliness').value),
@@ -1383,6 +1399,7 @@ function openDetail(id) {
       </div>
       <div class="detail-bar"><div class="detail-bar-fill" style="width:${e.ratings[r.key]}%"></div></div>
     </div>`).join('')}
+    ${e.memo ? `<div class="section-label" style="margin-top:14px">一言メモ</div><div class="detail-memo">${esc(e.memo)}</div>` : ''}
   `;
 
   document.getElementById('detail-modal').classList.add('open');
