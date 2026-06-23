@@ -1962,7 +1962,7 @@ function App() {
       setLdStatus("locating"); setLdError(null);
       try {
         const pos = await getGPS();
-        setLdDeparture({ ...pos, time: new Date().toLocaleTimeString() });
+        setLdDeparture({ ...pos, time: new Date().toLocaleTimeString(), timestamp: Date.now() });
         setLdStatus("measuring");
       } catch (e) {
         setLdError("GPS取得に失敗しました。位置情報を許可してください。");
@@ -1976,7 +1976,10 @@ function App() {
         const pos = await getGPS();
         const dist = haversineKm(ldDeparture.lat, ldDeparture.lng, pos.lat, pos.lng);
         const isLongDrive = dist >= ldThreshold;
-        const result = { distance: Math.round(dist * 100) / 100, isLongDrive };
+        const durationMin = ldDeparture.timestamp
+          ? Math.round((Date.now() - ldDeparture.timestamp) / 60000)
+          : null;
+        const result = { distance: Math.round(dist * 100) / 100, isLongDrive, durationMin };
         setLdResult(result);
         setLdStatus("complete");
         if (isLongDrive) {
@@ -1985,6 +1988,7 @@ function App() {
             distance: result.distance, isLongDrive: true,
             departure: { lat: ldDeparture.lat, lng: ldDeparture.lng },
             arrival:   { lat: pos.lat, lng: pos.lng },
+            durationMin,
           }]);
         }
       } catch (e) {
@@ -2016,6 +2020,24 @@ function App() {
               </div>
             )}
           </div>
+
+          {(() => {
+            const thisMonthLabel = today.slice(0,7);
+            const thisMonthCount = longDriveRecords.filter(r => r.isLongDrive && r.date && r.date.slice(0,7) === thisMonthLabel).length;
+            const totalCount = longDriveRecords.filter(r => r.isLongDrive).length;
+            return (
+              <div style={{ display:"flex", gap:8, marginBottom:16 }}>
+                <div style={{ flex:1, background:"#fff", borderRadius:12, border:"1px solid #DDE8F8", padding:"10px 0", textAlign:"center" }}>
+                  <div style={{ fontSize:10, color:"#88A8CC", marginBottom:2 }}>今月</div>
+                  <div style={{ fontSize:22, fontWeight:700, color:"#C04040" }}>{thisMonthCount}<span style={{ fontSize:12, marginLeft:2 }}>回</span></div>
+                </div>
+                <div style={{ flex:1, background:"#fff", borderRadius:12, border:"1px solid #DDE8F8", padding:"10px 0", textAlign:"center" }}>
+                  <div style={{ fontSize:10, color:"#88A8CC", marginBottom:2 }}>累計</div>
+                  <div style={{ fontSize:22, fontWeight:700, color:"#4A6090" }}>{totalCount}<span style={{ fontSize:12, marginLeft:2 }}>回</span></div>
+                </div>
+              </div>
+            );
+          })()}
 
           <div style={{ background:"#fff", borderRadius:12, border:"1px solid #DDE8F8", padding:"10px 16px", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             {ldThreshEdit ? (
@@ -2074,6 +2096,13 @@ function App() {
                 ? <div style={{ fontSize:14, fontWeight:700, color:"#C04040" }}>🔴 長距離ドライブ！（{ldThreshold}km以上）記録しました</div>
                 : <div style={{ fontSize:13, color:"#88A8CC" }}>{ldThreshold}km未満のため長距離判定なし（記録なし）</div>
               }
+              {ldResult.durationMin != null && (
+                <div style={{ fontSize:12, color:"#88A8CC", marginTop:8 }}>
+                  走行時間 {ldResult.durationMin >= 60
+                    ? `${Math.floor(ldResult.durationMin/60)}時間${ldResult.durationMin%60}分`
+                    : `${ldResult.durationMin}分`}
+                </div>
+              )}
             </div>
           )}
 
@@ -2158,6 +2187,11 @@ function App() {
                                   </div>
                                   <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                                     <span style={{ fontSize:14, fontWeight:700, color:"#2348b8" }}>{r.distance} km</span>
+                                    {r.durationMin != null && (
+                                      <span style={{ fontSize:10, color:"#B0C4E0" }}>
+                                        {r.durationMin >= 60 ? `${Math.floor(r.durationMin/60)}h${r.durationMin%60}m` : `${r.durationMin}m`}
+                                      </span>
+                                    )}
                                     <button onClick={() => { setLdEditId(r.id); setLdEditDist(String(r.distance)); }}
                                       style={{ padding:"3px 10px", borderRadius:8, border:"1px solid #c5d8ff", background:"#EEF3FF", color:"#2348b8", fontSize:12, cursor:"pointer" }}>
                                       編集
