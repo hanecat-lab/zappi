@@ -879,10 +879,6 @@
     <button class="sort-btn active" data-ssort="lastDate" onclick="setStoreSort(this,'lastDate')">最終訪問日</button>
     <button class="sort-btn" data-ssort="count" onclick="setStoreSort(this,'count')">訪問回数</button>
     <button class="sort-btn" data-ssort="amount" onclick="setStoreSort(this,'amount')">合計金額</button>
-    <button class="sort-btn" data-ssort="appearance" onclick="setStoreSort(this,'appearance')">容姿</button>
-    <button class="sort-btn" data-ssort="friendliness" onclick="setStoreSort(this,'friendliness')">接客</button>
-    <button class="sort-btn" data-ssort="technique" onclick="setStoreSort(this,'technique')">テクニック</button>
-    <button class="sort-btn" data-ssort="atmosphere" onclick="setStoreSort(this,'atmosphere')">雰囲気</button>
   </div>
   <div id="store-list"></div>
   <div id="stats-view"></div>
@@ -1503,10 +1499,6 @@ function sortCasts(casts) {
         ? b.lastDate.localeCompare(a.lastDate)
         : a.lastDate.localeCompare(b.lastDate);
       case 'count':       return b.count - a.count;
-      case 'appearance':  return b.avgAppearance - a.avgAppearance;
-      case 'friendliness':return b.avgFriendliness - a.avgFriendliness;
-      case 'technique':   return b.avgTechnique - a.avgTechnique;
-      case 'atmosphere':  return b.avgAtmosphere - a.avgAtmosphere;
       case 'totalAmount': return b.totalAmount - a.totalAmount;
       case 'talk':        return b.avgTalk - a.avgTalk;
       default: return 0;
@@ -1936,30 +1928,17 @@ function aggregateStores() {
       map[key] = {
         storeName: e.storeName || '（店名なし）',
         category: e.category,
-        count: 0, lastDate: '', totalAmount: 0,
-        totalR: { appearance:0, friendliness:0, technique:0, atmosphere:0, talk:0 }
+        count: 0, lastDate: '', totalAmount: 0
       };
     }
     const s = map[key];
     s.count++;
     if (!s.lastDate || e.date > s.lastDate) s.lastDate = e.date;
     s.totalAmount += (e.amount || 0);
-    if (e.ratings) {
-      s.totalR.appearance += (e.ratings.appearance || 0);
-      s.totalR.friendliness += (e.ratings.friendliness || 0);
-      s.totalR.technique += (e.ratings.technique || 0);
-      s.totalR.atmosphere += (e.ratings.atmosphere || 0);
-      s.totalR.talk += (e.ratings.talk || 0);
-    }
   });
   return Object.values(map).map(function(s) {
     return Object.assign(s, {
-      avgAppearance:   Math.round(s.totalR.appearance   / s.count),
-      avgFriendliness: Math.round(s.totalR.friendliness / s.count),
-      avgTechnique:    Math.round(s.totalR.technique    / s.count),
-      avgAtmosphere:   Math.round(s.totalR.atmosphere   / s.count),
-      avgTalk:         Math.round(s.totalR.talk         / s.count),
-      avgAmount:       Math.round(s.totalAmount / s.count)
+      avgAmount: Math.round(s.totalAmount / s.count)
     });
   });
 }
@@ -2009,13 +1988,6 @@ function renderStores() {
       + '<div>合計金額：<span style="color:var(--gold)">¥' + s.totalAmount.toLocaleString() + '</span></div>'
       + '<div>平均金額：<span>¥' + s.avgAmount.toLocaleString() + '</span></div>'
       + '<div>訪問回数：<span>' + s.count + '回</span></div>'
-      + '</div>'
-      + '<div class="store-ratings">'
-      + '<div>容姿 <b>' + s.avgAppearance + '</b></div>'
-      + '<div>接客 <b>' + s.avgFriendliness + '</b></div>'
-      + '<div>テクニック <b>' + s.avgTechnique + '</b></div>'
-      + '<div>雰囲気 <b>' + s.avgAtmosphere + '</b></div>'
-      + '<div>トーク <b>' + s.avgTalk + '</b></div>'
       + '</div>'
       + (function() {
           const memo = getStoreMemo(s.storeName);
