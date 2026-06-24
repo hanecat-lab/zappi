@@ -703,6 +703,27 @@
     font-size: 0.82rem; color: var(--text); line-height: 1.6;
   }
   .entry-memo.open { display: block; }
+
+  /* ---- collapsible location panel ---- */
+  .location-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    padding: 11px 13px; color: var(--text); font-size: 0.88rem; cursor: pointer;
+    transition: border-color .15s;
+  }
+  .location-toggle:active { border-color: var(--neon-cyan); }
+  #gps-status-inline { font-size: 0.76rem; color: var(--neon-cyan); flex: 1; text-align: right; margin-right: 8px; word-break: break-all; text-shadow: 0 0 6px rgba(0,229,255,.3); }
+  .location-chevron { font-size: 0.6rem; color: var(--text2); transition: transform .2s; flex-shrink: 0; }
+  .location-chevron.open { transform: rotate(90deg); }
+  .location-panel {
+    display: none; margin-top: 10px;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 12px 14px;
+  }
+  .location-panel.open { display: block; }
+  .gps-manual-row { display: flex; gap: 8px; align-items: flex-start; }
+  .gps-coord-wrap { flex: 1; }
+  .gps-coord-input { padding: 9px 10px; font-size: 0.85rem; }
   </style>
 </head>
 <body>
@@ -807,10 +828,27 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label">GPS記録</label>
-      <div class="gps-row">
-        <button class="gps-btn" onclick="recordGPS()">📍 現在地を記録</button>
-        <span class="gps-status" id="gps-status">未記録</span>
+      <button class="location-toggle" onclick="toggleLocationPanel()" id="location-toggle">
+        <span>📍 位置情報</span>
+        <span id="gps-status-inline">未記録</span>
+        <span id="location-chevron" class="location-chevron">▶</span>
+      </button>
+      <div class="location-panel" id="location-panel">
+        <div class="gps-row" style="margin-bottom:10px">
+          <button class="gps-btn" onclick="recordGPS()">現在地を記録</button>
+          <span class="gps-status" id="gps-status"></span>
+        </div>
+        <div class="gps-manual-row">
+          <div class="gps-coord-wrap">
+            <label class="form-label">緯度 Lat</label>
+            <input type="number" class="form-input gps-coord-input" id="f-lat" placeholder="35.68950" step="0.00001" inputmode="decimal">
+          </div>
+          <div class="gps-coord-wrap">
+            <label class="form-label">経度 Lng</label>
+            <input type="number" class="form-input gps-coord-input" id="f-lng" placeholder="139.69171" step="0.00001" inputmode="decimal">
+          </div>
+          <button class="gps-btn" onclick="applyManualCoords()" style="align-self:flex-end;white-space:nowrap">確定</button>
+        </div>
       </div>
     </div>
 
@@ -1018,6 +1056,48 @@ function locateMe() {
   );
 }
 
+function toggleLocationPanel() {
+  const panel = document.getElementById('location-panel');
+  const chev = document.getElementById('location-chevron');
+  const isOpen = panel.classList.toggle('open');
+  chev.classList.toggle('open', isOpen);
+}
+
+function setGPS(lat, lng) {
+  formGPS = { lat: lat, lng: lng };
+  const txt = lat.toFixed(5) + ', ' + lng.toFixed(5);
+  const s = document.getElementById('gps-status');
+  const si = document.getElementById('gps-status-inline');
+  if (s) s.textContent = txt;
+  if (si) si.textContent = txt;
+  const fl = document.getElementById('f-lat');
+  const fl2 = document.getElementById('f-lng');
+  if (fl) fl.value = lat;
+  if (fl2) fl2.value = lng;
+}
+
+function applyManualCoords() {
+  const lat = parseFloat(document.getElementById('f-lat').value);
+  const lng = parseFloat(document.getElementById('f-lng').value);
+  if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    alert('正しい座標を入力してください（緯度 -90〜90、経度 -180〜180）');
+    return;
+  }
+  setGPS(lat, lng);
+}
+
+function clearGPS() {
+  formGPS = null;
+  const s = document.getElementById('gps-status');
+  const si = document.getElementById('gps-status-inline');
+  const fl = document.getElementById('f-lat');
+  const fl2 = document.getElementById('f-lng');
+  if (s) s.textContent = '未記録';
+  if (si) si.textContent = '未記録';
+  if (fl) fl.value = '';
+  if (fl2) fl2.value = '';
+}
+
 function recordGPS() {
   if (!navigator.geolocation) {
     document.getElementById('gps-status').textContent = '非対応';
@@ -1025,11 +1105,7 @@ function recordGPS() {
   }
   document.getElementById('gps-status').textContent = '取得中...';
   navigator.geolocation.getCurrentPosition(
-    p => {
-      formGPS = { lat: p.coords.latitude, lng: p.coords.longitude };
-      document.getElementById('gps-status').textContent =
-        p.coords.latitude.toFixed(5) + ', ' + p.coords.longitude.toFixed(5);
-    },
+    p => { setGPS(p.coords.latitude, p.coords.longitude); },
     () => { document.getElementById('gps-status').textContent = '取得に失敗しました'; }
   );
 }
@@ -1276,7 +1352,11 @@ function openAddForm() {
   document.getElementById('f-amount').value = '';
   document.getElementById('f-course').value = '';
   document.getElementById('f-memo').value = '';
-  document.getElementById('gps-status').textContent = '未記録';
+  clearGPS();
+  const panel = document.getElementById('location-panel');
+  const chev = document.getElementById('location-chevron');
+  if (panel) { panel.classList.remove('open'); }
+  if (chev) { chev.classList.remove('open'); }
   RATINGS.forEach(k => setSlider(k, 50));
   renderCatSelect();
   document.getElementById('delete-btn').style.display = 'none';
@@ -1297,9 +1377,7 @@ function openEditForm(id) {
   document.getElementById('f-amount').value = e.amount || '';
   document.getElementById('f-course').value = e.course || '';
   document.getElementById('f-memo').value = e.memo || '';
-  document.getElementById('gps-status').textContent = e.gps
-    ? e.gps.lat.toFixed(5) + ', ' + e.gps.lng.toFixed(5)
-    : '未記録';
+  if (e.gps) { setGPS(e.gps.lat, e.gps.lng); } else { clearGPS(); }
   RATINGS.forEach(k => setSlider(k, e.ratings[k] || 50));
   selectCat(e.category);
   document.getElementById('delete-btn').style.display = 'block';
