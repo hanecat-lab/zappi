@@ -854,9 +854,10 @@
     <button class="sort-btn" data-sort="amount" onclick="setSort(this,'amount')">金額</button>
     <button class="sort-btn" data-sort="dist" onclick="setSort(this,'dist')">近さ</button>
     <button class="sort-btn" data-sort="appearance" onclick="setSort(this,'appearance')">容姿</button>
-    <button class="sort-btn" data-sort="friendliness" onclick="setSort(this,'friendliness')">愛想</button>
+    <button class="sort-btn" data-sort="friendliness" onclick="setSort(this,'friendliness')">接客</button>
     <button class="sort-btn" data-sort="technique" onclick="setSort(this,'technique')">テクニック</button>
     <button class="sort-btn" data-sort="atmosphere" onclick="setSort(this,'atmosphere')">雰囲気</button>
+    <button class="sort-btn" data-sort="talk" onclick="setSort(this,'talk')">トーク</button>
     <button class="sort-btn" data-sort="fav" onclick="setSort(this,'fav')">⭐お気に入り</button>
   </div>
 
@@ -866,9 +867,10 @@
     <button class="sort-btn active" data-csort="lastDate" onclick="setCastSort(this,'lastDate')">最終指名日</button>
     <button class="sort-btn" data-csort="count" onclick="setCastSort(this,'count')">回数</button>
     <button class="sort-btn" data-csort="appearance" onclick="setCastSort(this,'appearance')">容姿</button>
-    <button class="sort-btn" data-csort="friendliness" onclick="setCastSort(this,'friendliness')">愛想</button>
+    <button class="sort-btn" data-csort="friendliness" onclick="setCastSort(this,'friendliness')">接客</button>
     <button class="sort-btn" data-csort="technique" onclick="setCastSort(this,'technique')">テクニック</button>
     <button class="sort-btn" data-csort="atmosphere" onclick="setCastSort(this,'atmosphere')">雰囲気</button>
+    <button class="sort-btn" data-csort="talk" onclick="setCastSort(this,'talk')">トーク</button>
     <button class="sort-btn" data-csort="totalAmount" onclick="setCastSort(this,'totalAmount')">総額</button>
   </div>
   <div id="cast-list"></div>
@@ -878,7 +880,7 @@
     <button class="sort-btn" data-ssort="count" onclick="setStoreSort(this,'count')">訪問回数</button>
     <button class="sort-btn" data-ssort="amount" onclick="setStoreSort(this,'amount')">合計金額</button>
     <button class="sort-btn" data-ssort="appearance" onclick="setStoreSort(this,'appearance')">容姿</button>
-    <button class="sort-btn" data-ssort="friendliness" onclick="setStoreSort(this,'friendliness')">愛想</button>
+    <button class="sort-btn" data-ssort="friendliness" onclick="setStoreSort(this,'friendliness')">接客</button>
     <button class="sort-btn" data-ssort="technique" onclick="setStoreSort(this,'technique')">テクニック</button>
     <button class="sort-btn" data-ssort="atmosphere" onclick="setStoreSort(this,'atmosphere')">雰囲気</button>
   </div>
@@ -963,7 +965,7 @@
       <span class="rating-value" id="rv-appearance">50</span>
     </div>
     <div class="rating-row">
-      <span class="rating-label">愛想</span>
+      <span class="rating-label">接客</span>
       <input type="range" min="0" max="100" value="50" id="r-friendliness" oninput="syncRating('friendliness',this)">
       <span class="rating-value" id="rv-friendliness">50</span>
     </div>
@@ -976,6 +978,17 @@
       <span class="rating-label">店の雰囲気</span>
       <input type="range" min="0" max="100" value="50" id="r-atmosphere" oninput="syncRating('atmosphere',this)">
       <span class="rating-value" id="rv-atmosphere">50</span>
+    </div>
+    <div class="rating-row">
+      <span class="rating-label">トーク</span>
+      <input type="range" min="0" max="100" value="50" id="r-talk" oninput="syncRating('talk',this)">
+      <span class="rating-value" id="rv-talk">50</span>
+    </div>
+    <div class="form-group" style="margin-top:12px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;color:var(--text2)">
+        <input type="checkbox" id="f-kiss" style="width:18px;height:18px;accent-color:var(--neon-pink);cursor:pointer">
+        <span>💋 キスあり</span>
+      </label>
     </div>
 
     <div class="form-group" style="margin-top:16px">
@@ -1326,9 +1339,10 @@ function renderList() {
         </div>
         <div class="entry-ratings">
           ${mr('容姿', e.ratings.appearance)}
-          ${mr('愛想', e.ratings.friendliness)}
+          ${mr('接客', e.ratings.friendliness)}
           ${mr('テク', e.ratings.technique)}
           ${mr('雰囲気', e.ratings.atmosphere)}
+          ${e.ratings.talk != null ? mr('トーク', e.ratings.talk) : ''}
         </div>
         ${dist ? `<div class="entry-dist">📍 現在地から ${dist}</div>` : ''}
         ${e.memo ? `
@@ -1378,6 +1392,7 @@ function sortList(list) {
       case 'friendliness': return b.ratings.friendliness - a.ratings.friendliness;
       case 'technique':    return b.ratings.technique    - a.ratings.technique;
       case 'atmosphere':   return b.ratings.atmosphere   - a.ratings.atmosphere;
+      case 'talk':         return (b.ratings.talk||0)        - (a.ratings.talk||0);
       case 'fav':          return (b.favorite?1:0) - (a.favorite?1:0);
       default: return 0;
     }
@@ -1447,7 +1462,7 @@ function aggregateCasts() {
         count: 0,
         lastDate: '',
         totalAmount: 0,
-        totalRatings: { appearance: 0, friendliness: 0, technique: 0, atmosphere: 0 }
+        totalRatings: { appearance: 0, friendliness: 0, technique: 0, atmosphere: 0, talk: 0 }
       };
     }
     const c = map[key];
@@ -1458,13 +1473,15 @@ function aggregateCasts() {
     c.totalRatings.friendliness += e.ratings.friendliness;
     c.totalRatings.technique += e.ratings.technique;
     c.totalRatings.atmosphere += e.ratings.atmosphere;
+    c.totalRatings.talk += (e.ratings.talk || 0);
   });
   return Object.values(map).map(c => ({
     ...c,
     avgAppearance: Math.round(c.totalRatings.appearance / c.count),
     avgFriendliness: Math.round(c.totalRatings.friendliness / c.count),
     avgTechnique: Math.round(c.totalRatings.technique / c.count),
-    avgAtmosphere: Math.round(c.totalRatings.atmosphere / c.count)
+    avgAtmosphere: Math.round(c.totalRatings.atmosphere / c.count),
+    avgTalk: Math.round(c.totalRatings.talk / c.count)
   }));
 }
 
@@ -1478,6 +1495,7 @@ function sortCasts(casts) {
       case 'technique':   return b.avgTechnique - a.avgTechnique;
       case 'atmosphere':  return b.avgAtmosphere - a.avgAtmosphere;
       case 'totalAmount': return b.totalAmount - a.totalAmount;
+      case 'talk':        return b.avgTalk - a.avgTalk;
       default: return 0;
     }
   });
@@ -1523,9 +1541,10 @@ function renderCasts() {
       + '</div>'
       + '<div class="cast-ratings">'
       + '<div class="cast-rating-item">容姿 <span>' + c.avgAppearance + '</span></div>'
-      + '<div class="cast-rating-item">愛想 <span>' + c.avgFriendliness + '</span></div>'
+      + '<div class="cast-rating-item">接客 <span>' + c.avgFriendliness + '</span></div>'
       + '<div class="cast-rating-item">テクニック <span>' + c.avgTechnique + '</span></div>'
       + '<div class="cast-rating-item">雰囲気 <span>' + c.avgAtmosphere + '</span></div>'
+      + '<div class="cast-rating-item">トーク <span>' + c.avgTalk + '</span></div>'
       + '</div>'
       + '</div>';
   }).join('');
@@ -1548,7 +1567,7 @@ function setSort(btn, sort) {
 }
 
 // ===== FORM =====
-const RATINGS = ['appearance','friendliness','technique','atmosphere'];
+const RATINGS = ['appearance','friendliness','technique','atmosphere','talk'];
 
 function openAddForm() {
   editId  = null;
@@ -1563,6 +1582,7 @@ function openAddForm() {
   document.getElementById('f-course').value = '';
   document.getElementById('f-memo').value = '';
   document.getElementById('f-episode').value = '';
+  document.getElementById('f-kiss').checked = false;
   clearGPS();
   const panel = document.getElementById('location-panel');
   const chev = document.getElementById('location-chevron');
@@ -1589,6 +1609,7 @@ function openEditForm(id) {
   document.getElementById('f-course').value = e.course || '';
   document.getElementById('f-memo').value = e.memo || '';
   document.getElementById('f-episode').value = e.episode || '';
+  document.getElementById('f-kiss').checked = e.kiss || false;
   if (e.gps) { setGPS(e.gps.lat, e.gps.lng); } else { clearGPS(); }
   RATINGS.forEach(k => setSlider(k, e.ratings[k] || 50));
   selectCat(e.category);
@@ -1640,11 +1661,13 @@ function saveEntry() {
     course:       document.getElementById('f-course').value.trim(),
     memo:         document.getElementById('f-memo').value.trim(),
     episode:      document.getElementById('f-episode').value.trim(),
+    kiss:         document.getElementById('f-kiss').checked,
     ratings: {
       appearance:   parseInt(document.getElementById('r-appearance').value),
       friendliness: parseInt(document.getElementById('r-friendliness').value),
       technique:    parseInt(document.getElementById('r-technique').value),
       atmosphere:   parseInt(document.getElementById('r-atmosphere').value),
+      talk:         parseInt(document.getElementById('r-talk').value),
     }
   };
 
@@ -1685,9 +1708,10 @@ function openDetail(id) {
 
   const ratingRows = [
     { label:'容姿',        key:'appearance'   },
-    { label:'愛想',        key:'friendliness' },
+    { label:'接客',        key:'friendliness' },
     { label:'テクニック',  key:'technique'    },
     { label:'店の雰囲気', key:'atmosphere'   },
+    { label:'トーク',     key:'talk'         },
   ];
 
   document.getElementById('detail-content').innerHTML = `
@@ -1734,6 +1758,7 @@ function openDetail(id) {
     </div>`).join('')}
     ${e.memo ? `<div class="section-label" style="margin-top:14px">一言メモ</div><div class="detail-memo">${esc(e.memo)}</div>` : ''}
     ${e.episode ? `<div class="section-label" style="margin-top:14px">エピソード</div><div class="detail-memo" style="border-color:rgba(255,61,240,0.25);box-shadow:0 0 8px rgba(255,61,240,0.08)">${esc(e.episode)}</div>` : ''}
+    ${e.kiss ? '<div style="margin-top:10px;font-size:.9rem">💋 <span style="color:var(--neon-pink)">キスあり</span></div>' : ''}
   `;
 
   document.getElementById('detail-modal').classList.add('open');
@@ -1895,7 +1920,7 @@ function aggregateStores() {
         storeName: e.storeName || '（店名なし）',
         category: e.category,
         count: 0, lastDate: '', totalAmount: 0,
-        totalR: { appearance:0, friendliness:0, technique:0, atmosphere:0 }
+        totalR: { appearance:0, friendliness:0, technique:0, atmosphere:0, talk:0 }
       };
     }
     const s = map[key];
@@ -1906,6 +1931,7 @@ function aggregateStores() {
     s.totalR.friendliness += e.ratings.friendliness;
     s.totalR.technique += e.ratings.technique;
     s.totalR.atmosphere += e.ratings.atmosphere;
+    s.totalR.talk += (e.ratings.talk || 0);
   });
   return Object.values(map).map(function(s) {
     return Object.assign(s, {
@@ -1913,6 +1939,7 @@ function aggregateStores() {
       avgFriendliness: Math.round(s.totalR.friendliness / s.count),
       avgTechnique:    Math.round(s.totalR.technique    / s.count),
       avgAtmosphere:   Math.round(s.totalR.atmosphere   / s.count),
+      avgTalk:         Math.round(s.totalR.talk         / s.count),
       avgAmount:       Math.round(s.totalAmount / s.count)
     });
   });
@@ -1966,9 +1993,10 @@ function renderStores() {
       + '</div>'
       + '<div class="store-ratings">'
       + '<div>容姿 <b>' + s.avgAppearance + '</b></div>'
-      + '<div>愛想 <b>' + s.avgFriendliness + '</b></div>'
+      + '<div>接客 <b>' + s.avgFriendliness + '</b></div>'
       + '<div>テクニック <b>' + s.avgTechnique + '</b></div>'
       + '<div>雰囲気 <b>' + s.avgAtmosphere + '</b></div>'
+      + '<div>トーク <b>' + s.avgTalk + '</b></div>'
       + '</div>'
       + (function() {
           const memo = getStoreMemo(s.storeName);
