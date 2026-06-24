@@ -869,6 +869,7 @@
     <button class="sort-btn" data-csort="friendliness" onclick="setCastSort(this,'friendliness')">愛想</button>
     <button class="sort-btn" data-csort="technique" onclick="setCastSort(this,'technique')">テクニック</button>
     <button class="sort-btn" data-csort="atmosphere" onclick="setCastSort(this,'atmosphere')">雰囲気</button>
+    <button class="sort-btn" data-csort="totalAmount" onclick="setCastSort(this,'totalAmount')">総額</button>
   </div>
   <div id="cast-list"></div>
   <div id="store-sort-bar">
@@ -1445,12 +1446,14 @@ function aggregateCasts() {
         category: e.category,
         count: 0,
         lastDate: '',
+        totalAmount: 0,
         totalRatings: { appearance: 0, friendliness: 0, technique: 0, atmosphere: 0 }
       };
     }
     const c = map[key];
     c.count++;
     if (!c.lastDate || e.date > c.lastDate) c.lastDate = e.date;
+    c.totalAmount += (parseInt(e.amount) || 0);
     c.totalRatings.appearance += e.ratings.appearance;
     c.totalRatings.friendliness += e.ratings.friendliness;
     c.totalRatings.technique += e.ratings.technique;
@@ -1474,6 +1477,7 @@ function sortCasts(casts) {
       case 'friendliness':return b.avgFriendliness - a.avgFriendliness;
       case 'technique':   return b.avgTechnique - a.avgTechnique;
       case 'atmosphere':  return b.avgAtmosphere - a.avgAtmosphere;
+      case 'totalAmount': return b.totalAmount - a.totalAmount;
       default: return 0;
     }
   });
@@ -1515,6 +1519,7 @@ function renderCasts() {
         })()
       + '</div>'
       + '<div class="cast-stat">指名回数：<span>' + c.count + '回</span></div>'
+      + '<div class="cast-stat">総額：<span>' + c.totalAmount.toLocaleString() + '円</span></div>'
       + '</div>'
       + '<div class="cast-ratings">'
       + '<div class="cast-rating-item">容姿 <span>' + c.avgAppearance + '</span></div>'
@@ -1923,6 +1928,7 @@ function sortStores(stores) {
       case 'friendliness':return b.avgFriendliness - a.avgFriendliness;
       case 'technique':   return b.avgTechnique - a.avgTechnique;
       case 'atmosphere':  return b.avgAtmosphere - a.avgAtmosphere;
+      case 'totalAmount': return b.totalAmount - a.totalAmount;
       default: return 0;
     }
   });
