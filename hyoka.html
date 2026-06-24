@@ -929,7 +929,7 @@
       <input type="text" class="form-input" id="f-location" placeholder="場所・アクセスなど">
     </div>
 
-    <div class="form-group">
+    <div class="form-group" id="location-form-group">
       <button class="location-toggle" onclick="toggleLocationPanel()" id="location-toggle">
         <span>📍 位置情報</span>
         <span id="gps-status-inline">未記録</span>
@@ -1618,6 +1618,8 @@ function openAddForm() {
   if (panel) { panel.classList.remove('open'); }
   if (chev) { chev.classList.remove('open'); }
   renderCatSelect();
+  var lfg = document.getElementById('location-form-group');
+  if (lfg) lfg.style.display = '';
   document.getElementById('delete-btn').style.display = 'none';
   document.getElementById('form-modal').classList.add('open');
 }
@@ -1639,6 +1641,8 @@ function openEditForm(id) {
   document.getElementById('f-kiss').checked = e.kiss || false;
   if (e.gps) { setGPS(e.gps.lat, e.gps.lng); } else { clearGPS(); }
   selectCat(e.category);
+  var lfg = document.getElementById('location-form-group');
+  if (lfg) lfg.style.display = LOC_CATS.includes(e.category) ? 'none' : '';
   document.getElementById('delete-btn').style.display = 'block';
   closeDetail();
   document.getElementById('form-modal').classList.add('open');
@@ -1653,6 +1657,8 @@ function selectCat(cat) {
   const name = (document.getElementById('f-store') || {}).value;
   if (name && name.trim()) applyStoreLoc(name.trim());
   else showLocHint('');
+  var lfg = document.getElementById('location-form-group');
+  if (lfg) lfg.style.display = LOC_CATS.includes(cat) ? 'none' : '';
 }
 
 function setSlider(key, val) {
@@ -2021,12 +2027,27 @@ function renderStores() {
               + '<button class="store-loc-del" onclick="deleteStoreLoc(\'' + esc(s.storeName).replace(/'/g, "\\'") + '\',event)">✕</button>'
               + '</div>';
           }
-          return '<div class="store-loc-none">📍 場所未登録</div>';
+          return '<div class="store-loc-none">'
+            + '<button onclick="registerStoreLoc(\'" + esc(s.storeName).replace(/\'/g,"\\\'") + "\',event)"'
+            + ' style="background:transparent;border:1px solid var(--neon-cyan);color:var(--neon-cyan);border-radius:8px;padding:4px 12px;font-size:.76rem;cursor:pointer">'
+            + '📍 場所を登録</button>'
+            + '</div>';
         })() : '')
       + '</div>';
   }).join('');
 }
 
+
+function registerStoreLoc(name, ev) {
+  if (ev) ev.stopPropagation();
+  if (!navigator.geolocation) { alert('位置情報が使用できません'); return; }
+  navigator.geolocation.getCurrentPosition(function(p) {
+    setStoreLoc(name, p.coords.latitude, p.coords.longitude);
+    renderStores();
+  }, function() {
+    alert('位置情報の取得に失敗しました');
+  });
+}
 
 function editStoreMemo(name) {
   const current = getStoreMemo(name);
