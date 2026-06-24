@@ -832,9 +832,9 @@
     <div class="header-top">
       <span class="app-title">評価</span>
       <div class="view-toggle">
-        <button class="view-btn" id="view-btn-records" onclick="switchView('records')">記録</button>
         <button class="view-btn active" id="view-btn-casts" onclick="switchView('casts')">キャスト</button>
         <button class="view-btn" id="view-btn-stores" onclick="switchView('stores')">店舗</button>
+        <button class="view-btn" id="view-btn-records" onclick="switchView('records')">記録</button>
         <button class="view-btn" id="view-btn-stats" onclick="switchView('stats')">統計</button>
       </div>
       <button class="icon-btn" onclick="toggleSearch()" title="検索" id="search-btn">🔍</button>
@@ -1414,6 +1414,7 @@ function sortList(list) {
 // ---- view state ----
 let currentView = 'casts';
 let currentCastSort = 'lastDate';
+let castSortDir = 'desc';
 function toHira(str) {
   return (str||'').replace(/[ァ-ヶ]/g, function(c) {
     return String.fromCharCode(c.charCodeAt(0) - 0x60);
@@ -1498,7 +1499,9 @@ function aggregateCasts() {
 function sortCasts(casts) {
   return casts.sort((a, b) => {
     switch (currentCastSort) {
-      case 'lastDate':    return b.lastDate.localeCompare(a.lastDate);
+      case 'lastDate':    return castSortDir === 'desc'
+        ? b.lastDate.localeCompare(a.lastDate)
+        : a.lastDate.localeCompare(b.lastDate);
       case 'count':       return b.count - a.count;
       case 'appearance':  return b.avgAppearance - a.avgAppearance;
       case 'friendliness':return b.avgFriendliness - a.avgFriendliness;
@@ -1512,9 +1515,17 @@ function sortCasts(casts) {
 }
 
 function setCastSort(btn, sort) {
+  if (currentCastSort === sort && sort === 'lastDate') {
+    castSortDir = castSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    castSortDir = 'desc';
+    var ldBtn = document.querySelector('[data-csort="lastDate"]');
+    if (ldBtn) ldBtn.textContent = '最終指名日';
+  }
   document.querySelectorAll('#cast-sort-bar .sort-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   currentCastSort = sort;
+  if (sort === 'lastDate') btn.textContent = castSortDir === 'asc' ? '最終指名日 ↑' : '最終指名日';
   renderCasts();
 }
 
