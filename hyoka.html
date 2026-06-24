@@ -791,6 +791,11 @@
   .store-loc-link { font-size:.78rem; color:var(--neon-cyan); text-decoration:none; text-shadow:0 0 6px rgba(0,229,255,.35); }
   .store-loc-del { background:transparent; border:none; color:var(--text2); font-size:.85rem; cursor:pointer; padding:2px 6px; }
   .store-loc-none { margin-top:10px; padding-top:8px; border-top:1px solid var(--border); font-size:.76rem; color:var(--text2); }
+
+  .store-memo-row { margin-top:8px; padding-top:8px; border-top:1px solid var(--border); cursor:pointer; }
+  .store-memo-text { font-size:.78rem; color:var(--text2); word-break:break-word; line-height:1.5; }
+  .store-memo-add { margin-top:8px; padding-top:8px; border-top:1px solid var(--border); font-size:.76rem; color:var(--text2); cursor:pointer; opacity:.6; }
+  .store-memo-add:active, .store-memo-row:active { opacity:.7; }
   </style>
 </head>
 <body>
@@ -832,8 +837,13 @@
         <button class="view-btn" id="view-btn-stores" onclick="switchView('stores')">店舗</button>
         <button class="view-btn" id="view-btn-stats" onclick="switchView('stats')">統計</button>
       </div>
+      <button class="icon-btn" onclick="toggleSearch()" title="検索" id="search-btn">🔍</button>
       <button class="icon-btn" onclick="openSettings()" title="設定">⚙</button>
       <button class="add-btn" onclick="openAddForm()">＋</button>
+    </div>
+    <div id="search-bar" style="display:none;padding:6px 0 4px">
+      <input type="search" class="form-input" id="search-input" placeholder="キャスト名・店名・メモで検索…"
+        oninput="onSearchInput()" style="padding:9px 13px;font-size:.9rem">
     </div>
     <div class="category-tabs" id="category-tabs"></div>
   </div>
@@ -972,6 +982,11 @@
       <textarea class="form-input form-textarea" id="f-memo" rows="3" placeholder="感想・特徴・次回メモなど"></textarea>
     </div>
 
+    <div class="form-group" style="margin-top:0">
+      <label class="form-label">エピソード</label>
+      <textarea class="form-input form-textarea" id="f-episode" rows="4" placeholder="この日のキャストとのエピソードを記録…"></textarea>
+    </div>
+
     <button class="submit-btn" onclick="saveEntry()">保存する</button>
     <button class="delete-btn" id="delete-btn" style="display:none" onclick="deleteEntry()">この記録を削除</button>
   </div>
@@ -990,6 +1005,18 @@
   </div>
 </div>
 
+<!-- EPISODE MODAL -->
+<div class="modal-overlay" id="episode-modal" onclick="bgCloseEpisode(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">
+      <span id="episode-modal-title">エピソード</span>
+      <button class="modal-close" onclick="closeEpisode()">✕</button>
+    </div>
+    <div id="episode-list"></div>
+  </div>
+</div>
+
 <!-- SETTINGS MODAL -->
 <div class="modal-overlay" id="settings-modal" onclick="bgCloseSettings(event)">
   <div class="modal-sheet">
@@ -1005,6 +1032,14 @@
     <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="importData(event)">
     <div class="settings-hint">書き出し：全記録とカテゴリーをJSONファイルとして保存します。<br>読み込み：保存したファイルから復元します（現在のデータは置き換えられます）。</div>
 
+    <div class="section-label">暗証番号変更</div>
+    <div id="pin-change-form">
+      <input type="password" class="form-input" id="pin-current" placeholder="現在の暗証番号（4桁）" maxlength="4" inputmode="numeric" style="margin-bottom:8px">
+      <input type="password" class="form-input" id="pin-new1" placeholder="新しい暗証番号（4桁）" maxlength="4" inputmode="numeric" style="margin-bottom:8px">
+      <input type="password" class="form-input" id="pin-new2" placeholder="新しい暗証番号（確認）" maxlength="4" inputmode="numeric" style="margin-bottom:8px">
+      <button class="submit-btn" style="margin-top:0" onclick="changePin()">暗証番号を変更する</button>
+    </div>
+
     <div class="section-label">カテゴリー管理</div>
     <div id="cat-manager"></div>
     <div class="cat-add-row">
@@ -1017,7 +1052,7 @@
 
 <script>
 // ===== PIN =====
-const PIN = '4062';
+function getPin() { return localStorage.getItem('hyoka_pin_v1') || '4062'; }
 let pinBuf = '';
 
 function pinPress(d) {
@@ -1041,7 +1076,7 @@ function refreshDots() {
 }
 
 function checkPin() {
-  if (pinBuf === PIN) {
+  if (pinBuf === getPin()) {
     document.getElementById('pin-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     initApp();
@@ -1075,6 +1110,16 @@ function setStoreLoc(name, lat, lng) {
   saveStoreLocs(m);
 }
 function isLocCat(cat) { return LOC_CATS.includes(cat || formCat); }
+
+const SMKEY = 'hyoka_store_memo_v1';
+function loadStoreMemos() { try { return JSON.parse(localStorage.getItem(SMKEY) || '{}'); } catch(e) { return {}; } }
+function saveStoreMemos(m) { localStorage.setItem(SMKEY, JSON.stringify(m)); }
+function getStoreMemo(name) { return loadStoreMemos()[name] || ''; }
+function setStoreMemo(name, text) {
+  const m = loadStoreMemos();
+  if (text) m[name] = text; else delete m[name];
+  saveStoreMemos(m);
+}
 
 // Apply saved store location to the form (if exists)
 function applyStoreLoc(name) {
@@ -1243,6 +1288,15 @@ let formCat = '';
 function renderList() {
   let list = load();
   if (currentCat !== 'all') list = list.filter(e => e.category === currentCat);
+  if (currentSearch) {
+    list = list.filter(function(e) {
+      const q = currentSearch;
+      return (e.castName||'').toLowerCase().includes(q)
+          || (e.storeName||'').toLowerCase().includes(q)
+          || (e.memo||'').toLowerCase().includes(q)
+          || (e.episode||'').toLowerCase().includes(q);
+    });
+  }
   list = sortList(list);
 
   const el = document.getElementById('entry-list');
@@ -1333,6 +1387,23 @@ function sortList(list) {
 // ---- view state ----
 let currentView = 'records';
 let currentCastSort = 'lastDate';
+let currentSearch = '';
+
+
+function toggleSearch() {
+  const bar = document.getElementById('search-bar');
+  const btn = document.getElementById('search-btn');
+  const open = bar.style.display === 'none';
+  bar.style.display = open ? '' : 'none';
+  if (open) { document.getElementById('search-input').focus(); }
+  else { currentSearch = ''; document.getElementById('search-input').value = ''; renderList(); }
+  btn.style.boxShadow = open ? '0 0 16px var(--neon-cyan)' : '';
+}
+
+function onSearchInput() {
+  currentSearch = document.getElementById('search-input').value.trim().toLowerCase();
+  if (currentView === 'records') renderList();
+}
 
 function switchView(view) {
   currentView = view;
@@ -1419,7 +1490,8 @@ function renderCasts() {
   }
   container.innerHTML = casts.map(function(c) {
     const col = catColor(c.category);
-    return '<div class="cast-card">'
+    const castKey = (c.castName||'') + '|' + (c.storeName||'');
+    return '<div class="cast-card" onclick="openEpisode(\'' + esc(castKey).replace(/'/g,"\\'") + '\')" style="cursor:pointer">'
       + '<div class="cast-card-header">'
       + '<div>'
       + '<span class="cast-name-main">' + (c.castName || '（名前なし）') + '</span>'
@@ -1429,7 +1501,14 @@ function renderCasts() {
       + '</div>'
       + '<div class="cast-store">🏪 ' + (c.storeName || '（店名なし）') + '</div>'
       + '<div class="cast-stats">'
-      + '<div class="cast-stat">最終指名日：<span>' + c.lastDate + '</span></div>'
+      + '<div class="cast-stat">最終指名日：<span>' + c.lastDate + '</span>'
+      + (function(){
+          if (!c.lastDate) return '';
+          const diff = Math.floor((Date.now() - new Date(c.lastDate)) / 86400000);
+          const col = diff >= 60 ? '#ff4d6d' : diff >= 30 ? '#ffd166' : 'var(--text2)';
+          return ' <span style="font-size:11px;color:' + col + '">(' + diff + '日前)</span>';
+        })()
+      + '</div>'
       + '<div class="cast-stat">指名回数：<span>' + c.count + '回</span></div>'
       + '</div>'
       + '<div class="cast-ratings">'
@@ -1473,6 +1552,7 @@ function openAddForm() {
   document.getElementById('f-amount').value = '';
   document.getElementById('f-course').value = '';
   document.getElementById('f-memo').value = '';
+  document.getElementById('f-episode').value = '';
   clearGPS();
   const panel = document.getElementById('location-panel');
   const chev = document.getElementById('location-chevron');
@@ -1498,6 +1578,7 @@ function openEditForm(id) {
   document.getElementById('f-amount').value = e.amount || '';
   document.getElementById('f-course').value = e.course || '';
   document.getElementById('f-memo').value = e.memo || '';
+  document.getElementById('f-episode').value = e.episode || '';
   if (e.gps) { setGPS(e.gps.lat, e.gps.lng); } else { clearGPS(); }
   RATINGS.forEach(k => setSlider(k, e.ratings[k] || 50));
   selectCat(e.category);
@@ -1548,6 +1629,7 @@ function saveEntry() {
     amount:       parseInt(document.getElementById('f-amount').value) || 0,
     course:       document.getElementById('f-course').value.trim(),
     memo:         document.getElementById('f-memo').value.trim(),
+    episode:      document.getElementById('f-episode').value.trim(),
     ratings: {
       appearance:   parseInt(document.getElementById('r-appearance').value),
       friendliness: parseInt(document.getElementById('r-friendliness').value),
@@ -1641,6 +1723,7 @@ function openDetail(id) {
       <div class="detail-bar"><div class="detail-bar-fill" style="width:${e.ratings[r.key]}%"></div></div>
     </div>`).join('')}
     ${e.memo ? `<div class="section-label" style="margin-top:14px">一言メモ</div><div class="detail-memo">${esc(e.memo)}</div>` : ''}
+    ${e.episode ? `<div class="section-label" style="margin-top:14px">エピソード</div><div class="detail-memo" style="border-color:rgba(255,61,240,0.25);box-shadow:0 0 8px rgba(255,61,240,0.08)">${esc(e.episode)}</div>` : ''}
   `;
 
   document.getElementById('detail-modal').classList.add('open');
@@ -1709,6 +1792,21 @@ function importData(ev) {
 }
 
 // ---- category management ----
+
+function changePin() {
+  const cur = document.getElementById('pin-current').value;
+  const n1  = document.getElementById('pin-new1').value;
+  const n2  = document.getElementById('pin-new2').value;
+  if (cur !== getPin())          { alert('現在の暗証番号が違います'); return; }
+  if (!/^\d{4}$/.test(n1))      { alert('新しい暗証番号は4桁の数字で入力してください'); return; }
+  if (n1 !== n2)                  { alert('新しい暗証番号が一致しません'); return; }
+  localStorage.setItem('hyoka_pin_v1', n1);
+  document.getElementById('pin-current').value = '';
+  document.getElementById('pin-new1').value = '';
+  document.getElementById('pin-new2').value = '';
+  alert('暗証番号を変更しました');
+}
+
 function renderCatManager() {
   const el = document.getElementById('cat-manager');
   const cats = loadCats();
@@ -1861,6 +1959,15 @@ function renderStores() {
       + '<div>テクニック <b>' + s.avgTechnique + '</b></div>'
       + '<div>雰囲気 <b>' + s.avgAtmosphere + '</b></div>'
       + '</div>'
+      + (function() {
+          const memo = getStoreMemo(s.storeName);
+          if (memo) {
+            return '<div class="store-memo-row" onclick="editStoreMemo(\'' + esc(s.storeName).replace(/'/g,"\\'") + '\')" title="メモを編集">'
+              + '<span class="store-memo-text">📝 ' + esc(memo) + '</span>'
+              + '</div>';
+          }
+          return '<div class="store-memo-add" onclick="editStoreMemo(\'' + esc(s.storeName).replace(/'/g,"\\'") + '\')">＋ 店舗メモを追加</div>';
+        })()
       + (LOC_CATS.includes(s.category) ? (function() {
           const loc = getStoreLoc(s.storeName);
           if (loc) {
@@ -1873,6 +1980,15 @@ function renderStores() {
         })() : '')
       + '</div>';
   }).join('');
+}
+
+
+function editStoreMemo(name) {
+  const current = getStoreMemo(name);
+  const text = prompt('「' + name + '」のメモ（予約方法・駐車場・注意点など）', current);
+  if (text === null) return;
+  setStoreMemo(name, text.trim());
+  renderStores();
 }
 
 function deleteStoreLoc(name, ev) {
@@ -2005,6 +2121,32 @@ function acBlur(field) {
   setTimeout(function() { acClose(field); }, 180);
 }
 
+
+
+// ===== EPISODE MODAL =====
+function openEpisode(castKey) {
+  const parts = castKey.split('|');
+  const castName = parts[0] || '（名前なし）';
+  const storeName = parts[1] || '';
+  document.getElementById('episode-modal-title').textContent = castName + (storeName ? '  @' + storeName : '');
+  const entries = load().filter(function(e) {
+    return (e.castName||'') === parts[0] && (e.storeName||'') === parts[1] && e.episode;
+  }).sort(function(a,b) { return b.date.localeCompare(a.date); });
+  const el = document.getElementById('episode-list');
+  if (!entries.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text2);padding:32px 16px">エピソードの記録がありません</div>';
+  } else {
+    el.innerHTML = entries.map(function(e) {
+      return '<div style="padding:14px 0;border-bottom:1px solid var(--border)">'
+        + '<div style="font-size:.76rem;color:var(--text2);margin-bottom:6px">' + esc(e.date) + '</div>'
+        + '<div style="font-size:.88rem;color:var(--text);white-space:pre-wrap;word-break:break-word;line-height:1.6">' + esc(e.episode) + '</div>'
+        + '</div>';
+    }).join('');
+  }
+  document.getElementById('episode-modal').classList.add('open');
+}
+function closeEpisode() { document.getElementById('episode-modal').classList.remove('open'); }
+function bgCloseEpisode(e) { if (e.target.id === 'episode-modal') closeEpisode(); }
 
 function todayStr() {
   const d = new Date();
