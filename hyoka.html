@@ -639,6 +639,7 @@
     margin-top: 3px;
     text-shadow: 0 0 6px rgba(0,229,255,0.35);
   }
+  .entry-cospa { font-size:0.72rem; color:var(--text2); margin-top:2px; }
 
   /* ---- settings / category management ---- */
   .icon-btn {
@@ -858,6 +859,7 @@
   <div class="sort-bar">
     <span class="sort-label">ソート：</span>
     <button class="sort-btn" data-sort="fav" onclick="setSort(this,'fav')">⭐お気に入り</button>
+    <button class="sort-btn" data-sort="cospa" onclick="setSort(this,'cospa')">😊 満足度</button>
     <button class="sort-btn active" data-sort="date" onclick="setSort(this,'date')">日付</button>
     <button class="sort-btn" data-sort="amount" onclick="setSort(this,'amount')">金額</button>
     <button class="sort-btn" data-sort="dist" onclick="setSort(this,'dist')">近さ</button>
@@ -1406,6 +1408,7 @@ function renderList() {
             <div class="entry-date">${esc(e.date || '')}</div>
             <div class="entry-amount">¥${Number(e.amount||0).toLocaleString()}</div>
             ${e.course ? `<div class="entry-course">${esc(e.course)}</div>` : ''}
+            ${e.cospa ? `<div class="entry-cospa">${e.cospa==='満足'?'😊':e.cospa==='普通'?'😐':'😟'} ${esc(e.cospa)}</div>` : ''}
           </div>
         </div>
         ${dist ? `<div class="entry-dist">📍 現在地から ${dist}</div>` : ''}
@@ -1458,6 +1461,7 @@ function sortList(list) {
       case 'atmosphere':   return b.ratings.atmosphere   - a.ratings.atmosphere;
       case 'talk':         return (b.ratings.talk||0)        - (a.ratings.talk||0);
       case 'fav':          return (b.favorite?1:0) - (a.favorite?1:0);
+      case 'cospa': { var o={'満足':3,'普通':2,'割高':1}; return (o[b.cospa]||0)-(o[a.cospa]||0); }
       default: return 0;
     }
   });
