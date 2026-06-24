@@ -2069,9 +2069,7 @@ function renderStores() {
               + '</div>';
           }
           return '<div class="store-loc-none">'
-            + '<button onclick="registerStoreLoc(\'" + esc(s.storeName).replace(/\'/g,"\\\'") + "\',event)"'
-            + ' style="background:transparent;border:1px solid var(--neon-cyan);color:var(--neon-cyan);border-radius:8px;padding:4px 12px;font-size:.76rem;cursor:pointer">'
-            + '📍 場所を登録</button>'
+            + '<button onclick="registerStoreLoc(\'' + esc(s.storeName).replace(/'/g, "\\'") + '\',event)" style="background:transparent;border:1px solid var(--neon-cyan);color:var(--neon-cyan);border-radius:8px;padding:4px 12px;font-size:.76rem;cursor:pointer">📍 場所を登録</button>'
             + '</div>';
         })() : '')
       + '</div>';
