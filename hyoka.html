@@ -1291,10 +1291,10 @@ function renderList() {
   if (currentSearch) {
     list = list.filter(function(e) {
       const q = currentSearch;
-      return (e.castName||'').toLowerCase().includes(q)
-          || (e.storeName||'').toLowerCase().includes(q)
-          || (e.memo||'').toLowerCase().includes(q)
-          || (e.episode||'').toLowerCase().includes(q);
+      return toHira((e.castName||'').toLowerCase()).includes(q)
+          || toHira((e.storeName||'').toLowerCase()).includes(q)
+          || toHira((e.memo||'').toLowerCase()).includes(q)
+          || toHira((e.episode||'').toLowerCase()).includes(q);
     });
   }
   list = sortList(list);
@@ -1387,6 +1387,11 @@ function sortList(list) {
 // ---- view state ----
 let currentView = 'records';
 let currentCastSort = 'lastDate';
+function toHira(str) {
+  return (str||'').replace(/[ァ-ヶ]/g, function(c) {
+    return String.fromCharCode(c.charCodeAt(0) - 0x60);
+  });
+}
 let currentSearch = '';
 
 
@@ -1401,7 +1406,7 @@ function toggleSearch() {
 }
 
 function onSearchInput() {
-  currentSearch = document.getElementById('search-input').value.trim().toLowerCase();
+  currentSearch = toHira(document.getElementById('search-input').value.trim().toLowerCase());
   if (currentView === 'records') renderList();
 }
 
@@ -2091,7 +2096,7 @@ function acFilter(field) {
 
   const q = input.value.trim().toLowerCase();
   const all = field === 'store' ? getStoreNames() : [];
-  const filtered = q ? all.filter(function(n) { return n.toLowerCase().includes(q); }) : all;
+  const filtered = q ? all.filter(function(n) { return toHira(n.toLowerCase()).includes(toHira(q)); }) : all;
 
   if (!filtered.length) {
     list.classList.remove('open');
