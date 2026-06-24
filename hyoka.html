@@ -1446,18 +1446,9 @@ function aggregateCasts() {
     c.count++;
     if (!c.lastDate || e.date > c.lastDate) c.lastDate = e.date;
     c.totalAmount += (parseInt(e.amount) || 0);
-    c.totalRatings.appearance += e.ratings.appearance;
-    c.totalRatings.friendliness += e.ratings.friendliness;
-    c.totalRatings.technique += e.ratings.technique;
     if (e.kiss) c.kissCount++;
   });
-  return Object.values(map).map(c => ({
-    ...c,
-    avgAppearance: Math.round(c.totalRatings.appearance / c.count),
-    avgFriendliness: Math.round(c.totalRatings.friendliness / c.count),
-    avgTechnique: Math.round(c.totalRatings.technique / c.count),
-    kissCount: c.kissCount
-  })).map(function(c) {
+  return Object.values(map).map(function(c) {
     var castKey = (c.castName||'') + '|' + (c.storeName||'');
     var cr = getCastRating(castKey);
     return Object.assign(c, {
@@ -1888,11 +1879,13 @@ function aggregateStores() {
     s.count++;
     if (!s.lastDate || e.date > s.lastDate) s.lastDate = e.date;
     s.totalAmount += (e.amount || 0);
-    s.totalR.appearance += e.ratings.appearance;
-    s.totalR.friendliness += e.ratings.friendliness;
-    s.totalR.technique += e.ratings.technique;
-    s.totalR.atmosphere += e.ratings.atmosphere;
-    s.totalR.talk += (e.ratings.talk || 0);
+    if (e.ratings) {
+      s.totalR.appearance += (e.ratings.appearance || 0);
+      s.totalR.friendliness += (e.ratings.friendliness || 0);
+      s.totalR.technique += (e.ratings.technique || 0);
+      s.totalR.atmosphere += (e.ratings.atmosphere || 0);
+      s.totalR.talk += (e.ratings.talk || 0);
+    }
   });
   return Object.values(map).map(function(s) {
     return Object.assign(s, {
