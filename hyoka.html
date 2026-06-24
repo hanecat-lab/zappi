@@ -832,8 +832,8 @@
     <div class="header-top">
       <span class="app-title">評価</span>
       <div class="view-toggle">
-        <button class="view-btn active" id="view-btn-records" onclick="switchView('records')">記録</button>
-        <button class="view-btn" id="view-btn-casts" onclick="switchView('casts')">キャスト</button>
+        <button class="view-btn" id="view-btn-records" onclick="switchView('records')">記録</button>
+        <button class="view-btn active" id="view-btn-casts" onclick="switchView('casts')">キャスト</button>
         <button class="view-btn" id="view-btn-stores" onclick="switchView('stores')">店舗</button>
         <button class="view-btn" id="view-btn-stats" onclick="switchView('stats')">統計</button>
       </div>
@@ -1329,20 +1329,13 @@ function renderList() {
         <div class="entry-card-header">
           <div>
             <div class="entry-store">${esc(e.storeName || '店名未入力')}</div>
-            <div class="entry-cast">${esc(e.castName || 'キャスト未入力')}</div>
+            <div class="entry-cast">${esc(e.castName || 'キャスト未入力')}${e.kiss ? ' 💋' : ''}</div>
           </div>
           <div class="entry-meta">
             <div class="entry-date">${esc(e.date || '')}</div>
             <div class="entry-amount">¥${Number(e.amount||0).toLocaleString()}</div>
             ${e.course ? `<div class="entry-course">${esc(e.course)}</div>` : ''}
           </div>
-        </div>
-        <div class="entry-ratings">
-          ${mr('容姿', e.ratings.appearance)}
-          ${mr('接客', e.ratings.friendliness)}
-          ${mr('テク', e.ratings.technique)}
-          ${mr('雰囲気', e.ratings.atmosphere)}
-          ${e.ratings.talk != null ? mr('トーク', e.ratings.talk) : ''}
         </div>
         ${dist ? `<div class="entry-dist">📍 現在地から ${dist}</div>` : ''}
         ${e.memo ? `
@@ -1401,7 +1394,7 @@ function sortList(list) {
 
 
 // ---- view state ----
-let currentView = 'records';
+let currentView = 'casts';
 let currentCastSort = 'lastDate';
 function toHira(str) {
   return (str||'').replace(/[ァ-ヶ]/g, function(c) {
@@ -1521,7 +1514,7 @@ function renderCasts() {
   container.innerHTML = casts.map(function(c) {
     const col = catColor(c.category);
     const castKey = (c.castName||'') + '|' + (c.storeName||'');
-    return '<div class="cast-card" onclick="openEpisode(\'' + esc(castKey).replace(/'/g,"\\'") + '\')" style="cursor:pointer">'
+    return '<div class="cast-card" onclick="openCastDetail(\'' + esc(castKey).replace(/'/g,"\\'") + '\')" style="cursor:pointer">'
       + '<div class="cast-card-header">'
       + '<div>'
       + '<span class="cast-name-main">' + (c.castName || '（名前なし）') + '</span>'
@@ -2166,29 +2159,77 @@ function acBlur(field) {
 
 
 
-// ===== EPISODE MODAL =====
-function openEpisode(castKey) {
+// ===== CAST DETAIL MODAL =====
+function openCastDetail(castKey) {
   const parts = castKey.split('|');
   const castName = parts[0] || '（名前なし）';
   const storeName = parts[1] || '';
   document.getElementById('episode-modal-title').textContent = castName + (storeName ? '  @' + storeName : '');
+
+  const allCasts = aggregateCasts();
+  const c = allCasts.find(function(x) {
+    return (x.castName||'') === parts[0] && (x.storeName||'') === parts[1];
+  });
+
   const entries = load().filter(function(e) {
     return (e.castName||'') === parts[0] && (e.storeName||'') === parts[1];
   }).sort(function(a,b) { return b.date.localeCompare(a.date); });
+
   const el = document.getElementById('episode-list');
+  var html = '';
+
+  if (c) {
+    var diff = c.lastDate ? Math.floor((Date.now() - new Date(c.lastDate)) / 86400000) : null;
+    var diffCol = diff >= 60 ? '#ff4d6d' : diff >= 30 ? '#ffd166' : 'var(--text2)';
+    html += '<div style="padding:12px 0 16px;border-bottom:2px solid var(--border)">';
+    html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px">';
+    html += '<span style="font-size:.85rem;color:var(--text2)">指名回数：<b style="color:var(--text)">' + c.count + '回</b></span>';
+    html += '<span style="font-size:.85rem;color:var(--text2)">総額：<b style="color:var(--gold)">¥' + c.totalAmount.toLocaleString() + '</b></span>';
+    if (c.kissCount) html += '<span style="font-size:.85rem">💋×' + c.kissCount + '</span>';
+    html += '</div>';
+    if (c.lastDate) {
+      html += '<div style="font-size:.82rem;color:var(--text2);margin-bottom:10px">最終指名：<span style="color:var(--text)">' + c.lastDate + '</span>';
+      if (diff !== null) html += ' <span style="font-size:11px;color:' + diffCol + '">(' + diff + '日前)</span>';
+      html += '</div>';
+    }
+    html += '<div style="display:flex;gap:10px;flex-wrap:wrap">';
+    html += '<span style="font-size:11px;color:var(--text2)">容姿 <b style="color:var(--accent2)">' + c.avgAppearance + '</b></span>';
+    html += '<span style="font-size:11px;color:var(--text2)">接客 <b style="color:var(--accent2)">' + c.avgFriendliness + '</b></span>';
+    html += '<span style="font-size:11px;color:var(--text2)">テク <b style="color:var(--accent2)">' + c.avgTechnique + '</b></span>';
+    html += '<span style="font-size:11px;color:var(--text2)">雰囲気 <b style="color:var(--accent2)">' + c.avgAtmosphere + '</b></span>';
+    html += '<span style="font-size:11px;color:var(--text2)">トーク <b style="color:var(--accent2)">' + c.avgTalk + '</b></span>';
+    html += '</div>';
+    html += '</div>';
+  }
+
   if (!entries.length) {
-    el.innerHTML = '<div style="text-align:center;color:var(--text2);padding:32px 16px">来店記録がありません</div>';
+    html += '<div style="text-align:center;color:var(--text2);padding:32px 16px">来店記録がありません</div>';
   } else {
-    el.innerHTML = entries.map(function(e) {
-      var epHtml = e.episode
-        ? '<div style="font-size:.88rem;color:var(--text);white-space:pre-wrap;word-break:break-word;line-height:1.6">' + esc(e.episode) + '</div>'
-        : '<div style="font-size:.88rem;color:var(--text2);font-style:italic">（メモなし）</div>';
-      return '<div style="padding:14px 0;border-bottom:1px solid var(--border)">'
-        + '<div style="font-size:.76rem;color:var(--text2);margin-bottom:6px">' + esc(e.date) + '</div>'
-        + epHtml
-        + '</div>';
+    html += entries.map(function(e) {
+      var row = '<div style="padding:12px 0;border-bottom:1px solid var(--border)">';
+      row += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">';
+      row += '<span style="font-size:.78rem;color:var(--text2)">' + esc(e.date) + '</span>';
+      row += '<span style="font-size:.88rem;color:var(--gold)">¥' + Number(e.amount||0).toLocaleString() + '</span>';
+      row += '</div>';
+      if (e.course || e.kiss) {
+        row += '<div style="font-size:.78rem;color:var(--text2);margin-bottom:4px">';
+        if (e.course) row += esc(e.course);
+        if (e.course && e.kiss) row += '　';
+        if (e.kiss) row += '💋';
+        row += '</div>';
+      }
+      if (e.memo) {
+        row += '<div style="font-size:.82rem;color:var(--text);margin-bottom:4px;opacity:.85">' + esc(e.memo) + '</div>';
+      }
+      if (e.episode) {
+        row += '<div style="font-size:.82rem;color:var(--neon-pink);white-space:pre-wrap;word-break:break-word;line-height:1.5;border-left:2px solid var(--neon-pink);padding-left:8px;margin-top:4px">' + esc(e.episode) + '</div>';
+      }
+      row += '</div>';
+      return row;
     }).join('');
   }
+
+  el.innerHTML = html;
   document.getElementById('episode-modal').classList.add('open');
 }
 function closeEpisode() { document.getElementById('episode-modal').classList.remove('open'); }
