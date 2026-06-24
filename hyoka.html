@@ -1232,13 +1232,13 @@ let formGPS = null;
 function initApp() {
   renderCatTabs();
   locateMe();
-  renderList();
+  switchView(currentView);
 }
 
 function locateMe() {
   if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(
-    p => { myGPS = { lat: p.coords.latitude, lng: p.coords.longitude }; renderList(); },
+    p => { myGPS = { lat: p.coords.latitude, lng: p.coords.longitude }; if (currentView === 'records') renderList(); },
     () => {}
   );
 }
