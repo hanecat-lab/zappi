@@ -1528,12 +1528,14 @@ function renderCasts() {
   const casts = sortCasts(aggregateCasts());
   if (casts.length === 0) {
     container.innerHTML = '<div style="text-align:center;color:var(--text2);padding:40px 20px;">記録がありません</div>';
+    container.onclick = null;
     return;
   }
   container.innerHTML = casts.map(function(c) {
     const col = catColor(c.category);
     const castKey = (c.castName||'') + '|' + (c.storeName||'');
-    return '<div class="cast-card' + (c.favorite ? ' fav-card' : '') + '" onclick="openCastDetail(\'' + esc(castKey).replace(/'/g,"\\'") + '\')" style="cursor:pointer">'
+    const safeKey = encodeURIComponent(castKey);
+    return '<div class="cast-card' + (c.favorite ? ' fav-card' : '') + '" data-castkey="' + esc(castKey) + '" style="cursor:pointer">'
       + '<div class="cast-card-header">'
       + '<div>'
       + '<span class="cast-name-main">' + (c.castName || '（名前なし）') + '</span>'
@@ -1541,7 +1543,7 @@ function renderCasts() {
       + '<span style="margin-left:8px;font-size:11px;border:1px solid ' + col + ';color:' + col + ';border-radius:8px;padding:1px 7px;">' + c.category + '</span>'
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:8px">'
-      + '<button class="fav-btn" onclick="toggleCastFav(\'" + castKey.replace(/\'/g,"\\\'") + "\',event)" style="font-size:1rem">' + (c.favorite ? '★' : '☆') + '</button>'
+      + '<button class="fav-btn" data-favkey="' + esc(castKey) + '" style="font-size:1rem;padding:6px 8px;">' + (c.favorite ? '★' : '☆') + '</button>'
       + '<span class="cast-count-badge">' + c.count + '回</span>'
       + '</div>'
       + '</div>'
@@ -1551,8 +1553,8 @@ function renderCasts() {
       + (function(){
           if (!c.lastDate) return '';
           const diff = Math.floor((Date.now() - new Date(c.lastDate)) / 86400000);
-          const col = diff >= 60 ? '#ff4d6d' : diff >= 30 ? '#ffd166' : 'var(--text2)';
-          return ' <span style="font-size:11px;color:' + col + '">(' + diff + '日前)</span>';
+          const col2 = diff >= 60 ? '#ff4d6d' : diff >= 30 ? '#ffd166' : 'var(--text2)';
+          return ' <span style="font-size:11px;color:' + col2 + '">(' + diff + '日前)</span>';
         })()
       + '</div>'
       + '<div class="cast-stat">指名回数：<span>' + c.count + '回</span></div>'
@@ -1567,6 +1569,27 @@ function renderCasts() {
       + '</div>'
       + '</div>';
   }).join('');
+  container.onclick = function(ev) {
+    var favBtn = ev.target.closest('[data-favkey]');
+    if (favBtn) {
+      var castKey = favBtn.dataset.favkey;
+      var ratings = loadCastRatings();
+      if (!ratings[castKey]) ratings[castKey] = {};
+      ratings[castKey].favorite = !ratings[castKey].favorite;
+      saveCastRatings(ratings);
+      favBtn.textContent = ratings[castKey].favorite ? '★' : '☆';
+      var card = favBtn.closest('.cast-card');
+      if (card) {
+        if (ratings[castKey].favorite) card.classList.add('fav-card');
+        else card.classList.remove('fav-card');
+      }
+      return;
+    }
+    var card = ev.target.closest('.cast-card');
+    if (card && card.dataset.castkey) {
+      openCastDetail(card.dataset.castkey);
+    }
+  };
 }
 function filterCat(btn, cat) {
   document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
@@ -1907,14 +1930,12 @@ function deleteCategory(name) {
 
 
 // ===== FAVORITES =====
-function toggleCastFav(castKey, ev) {
-  ev.stopPropagation();
-  ev.preventDefault();
+function toggleCastFav(castKey) {
   var ratings = loadCastRatings();
   if (!ratings[castKey]) ratings[castKey] = {};
   ratings[castKey].favorite = !ratings[castKey].favorite;
   saveCastRatings(ratings);
-  setTimeout(renderCasts, 0);
+  renderCasts();
 }
 
 function toggleFav(id, ev) {
