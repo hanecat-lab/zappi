@@ -872,6 +872,7 @@
     <button class="sort-btn" data-csort="atmosphere" onclick="setCastSort(this,'atmosphere')">雰囲気</button>
     <button class="sort-btn" data-csort="talk" onclick="setCastSort(this,'talk')">トーク</button>
     <button class="sort-btn" data-csort="totalAmount" onclick="setCastSort(this,'totalAmount')">総額</button>
+    <button class="sort-btn" data-csort="fav" onclick="setCastSort(this,'fav')">⭐お気に入り</button>
   </div>
   <div id="cast-list"></div>
   <div id="store-sort-bar">
@@ -1486,7 +1487,8 @@ function aggregateCasts() {
       avgFriendliness: cr.friendliness,
       avgTechnique: cr.technique,
       avgAtmosphere: cr.atmosphere,
-      avgTalk: cr.talk
+      avgTalk: cr.talk,
+      favorite: cr.favorite || false
     });
   });
 }
@@ -1500,6 +1502,7 @@ function sortCasts(casts) {
       case 'count':       return b.count - a.count;
       case 'totalAmount': return b.totalAmount - a.totalAmount;
       case 'talk':        return b.avgTalk - a.avgTalk;
+      case 'fav':          return (b.favorite?1:0) - (a.favorite?1:0);
       default: return 0;
     }
   });
@@ -1530,14 +1533,17 @@ function renderCasts() {
   container.innerHTML = casts.map(function(c) {
     const col = catColor(c.category);
     const castKey = (c.castName||'') + '|' + (c.storeName||'');
-    return '<div class="cast-card" onclick="openCastDetail(\'' + esc(castKey).replace(/'/g,"\\'") + '\')" style="cursor:pointer">'
+    return '<div class="cast-card' + (c.favorite ? ' fav-card' : '') + '" onclick="openCastDetail(\'' + esc(castKey).replace(/'/g,"\\'") + '\')" style="cursor:pointer">'
       + '<div class="cast-card-header">'
       + '<div>'
       + '<span class="cast-name-main">' + (c.castName || '（名前なし）') + '</span>'
       + (c.kissCount ? '<span style="font-size:14px;margin-left:5px" title="キスあり">💋</span>' : '')
       + '<span style="margin-left:8px;font-size:11px;border:1px solid ' + col + ';color:' + col + ';border-radius:8px;padding:1px 7px;">' + c.category + '</span>'
       + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px">'
+      + '<button class="fav-btn" onclick="toggleCastFav(\'" + castKey.replace(/\'/g,"\\\'") + "\',event)" style="font-size:1rem">' + (c.favorite ? '★' : '☆') + '</button>'
       + '<span class="cast-count-badge">' + c.count + '回</span>'
+      + '</div>'
       + '</div>'
       + '<div class="cast-store">🏪 ' + (c.storeName || '（店名なし）') + '</div>'
       + '<div class="cast-stats">'
@@ -1895,6 +1901,15 @@ function deleteCategory(name) {
 
 
 // ===== FAVORITES =====
+function toggleCastFav(castKey, ev) {
+  ev.stopPropagation();
+  var ratings = loadCastRatings();
+  if (!ratings[castKey]) ratings[castKey] = {};
+  ratings[castKey].favorite = !ratings[castKey].favorite;
+  saveCastRatings(ratings);
+  renderCasts();
+}
+
 function toggleFav(id, ev) {
   ev.stopPropagation();
   const list = load();
