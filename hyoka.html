@@ -998,7 +998,7 @@
       </div>
     </div>
 
-    <div class="form-group" style="margin-top:16px">
+    <div class="form-group" id="memo-form-group" style="margin-top:16px">
       <label class="form-label">一言メモ</label>
       <textarea class="form-input form-textarea" id="f-memo" rows="3" placeholder="感想・特徴・次回メモなど"></textarea>
     </div>
@@ -1596,6 +1596,8 @@ function openAddForm() {
   document.getElementById('f-kiss').checked = false;
   var ncr = document.getElementById('new-cast-ratings');
   if (ncr) ncr.style.display = 'none';
+  var mg = document.getElementById('memo-form-group');
+  if (mg) mg.style.display = '';
   ['appearance','friendliness','technique','atmosphere','talk'].forEach(function(k) {
     var sl = document.getElementById('r-' + k);
     if (sl) { sl.value = 50; document.getElementById('rv-' + k).textContent = 50; }
@@ -1625,6 +1627,8 @@ function openEditForm(id) {
   document.getElementById('f-course').value = e.course || '';
   document.getElementById('f-memo').value = e.memo || '';
   document.getElementById('f-episode').value = e.episode || '';
+  var mg = document.getElementById('memo-form-group');
+  if (mg) mg.style.display = e.memo ? '' : 'none';
   document.getElementById('f-kiss').checked = e.kiss || false;
   if (e.gps) { setGPS(e.gps.lat, e.gps.lng); } else { clearGPS(); }
   selectCat(e.category);
@@ -2140,6 +2144,8 @@ function checkNewCast() {
   var isNew = castName.length > 0 && !loadCastRatings()[castKey];
   var section = document.getElementById('new-cast-ratings');
   if (section) section.style.display = isNew ? '' : 'none';
+  var memoGroup = document.getElementById('memo-form-group');
+  if (memoGroup) memoGroup.style.display = isNew ? '' : 'none';
 }
 
 function acOpen(field) {
@@ -2230,7 +2236,9 @@ function openCastDetail(castKey) {
   var rKeys = ['appearance','friendliness','technique','atmosphere','talk'];
   var rLabels = ['容姿','接客','テクニック','雰囲気','トーク'];
   html += '<div style="padding:14px 0 16px;border-bottom:2px solid var(--border)">';
-  html += '<div style="font-size:.8rem;color:var(--text2);margin-bottom:10px;letter-spacing:.05em">評価</div>';
+  html += '<div onclick="toggleCastRating()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:var(--text2);margin-bottom:0;letter-spacing:.05em">';
+  html += '評価 <span id="cast-rating-chevron" style="font-size:.75rem">▶</span></div>';
+  html += '<div id="cast-rating-body" style="display:none">';
   for (var ri = 0; ri < rKeys.length; ri++) {
     var rk = rKeys[ri];
     var rv = cr[rk] !== undefined ? cr[rk] : 50;
@@ -2243,6 +2251,7 @@ function openCastDetail(castKey) {
     html += '</div>';
   }
   html += '<button onclick="saveCastRatingFromModal()" style="margin-top:4px;padding:6px 18px;font-size:.82rem;background:var(--neon-cyan);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700">保存</button>';
+  html += '</div>';
   html += '</div>';
 
   if (!entries.length) {
@@ -2277,6 +2286,15 @@ function openCastDetail(castKey) {
 }
 function closeEpisode() { document.getElementById('episode-modal').classList.remove('open'); }
 function bgCloseEpisode(e) { if (e.target.id === 'episode-modal') closeEpisode(); }
+function toggleCastRating() {
+  var body = document.getElementById('cast-rating-body');
+  var icon = document.getElementById('cast-rating-chevron');
+  if (!body) return;
+  var open = body.style.display === 'none';
+  body.style.display = open ? '' : 'none';
+  icon.textContent = open ? '▼' : '▶';
+}
+
 function saveCastRatingFromModal() {
   var safeId = currentCastKey.replace(/[^a-zA-Z0-9]/g,'_');
   var rKeys = ['appearance','friendliness','technique','atmosphere','talk'];
