@@ -705,6 +705,15 @@
   }
   .entry-memo.open { display: block; }
 
+  .cast-memo-wrap { margin-top: 8px; border-top: 1px solid rgba(0,229,255,0.12); padding-top: 8px; }
+  .cast-memo {
+    display: none; white-space: pre-wrap; word-break: break-word;
+    margin-top: 6px; padding: 9px 11px;
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    font-size: 0.82rem; color: var(--text); line-height: 1.6;
+  }
+  .cast-memo.open { display: block; }
+
   /* ---- collapsible location panel ---- */
   .location-toggle {
     width: 100%; display: flex; align-items: center; justify-content: space-between;
@@ -1421,6 +1430,13 @@ function renderList() {
           </button>
           <div class="entry-memo" id="memo-${e.id}">${esc(e.memo)}</div>
         </div>` : ''}
+        ${e.episode ? `
+        <div class="entry-memo-wrap">
+          <button class="memo-toggle" onclick="toggleEpisode('${e.id}', event)">
+            <span class="memo-toggle-icon" id="epi-icon-${e.id}">▶</span> エピソード
+          </button>
+          <div class="entry-memo" id="epi-${e.id}">${esc(e.episode)}</div>
+        </div>` : ''}
       </div>`;
   }).join('');
 }
@@ -1438,6 +1454,24 @@ function toggleMemo(id, ev) {
   const memo = document.getElementById('memo-' + id);
   const icon = document.getElementById('mi-' + id);
   const open = memo.classList.toggle('open');
+  icon.textContent = open ? '▼' : '▶';
+}
+
+function toggleEpisode(id, ev) {
+  ev.stopPropagation();
+  const el = document.getElementById('epi-' + id);
+  const icon = document.getElementById('epi-icon-' + id);
+  const open = el.classList.toggle('open');
+  icon.textContent = open ? '▼' : '▶';
+}
+
+function toggleCastMemo(castKey, ev) {
+  ev.stopPropagation();
+  const safeKey = encodeURIComponent(castKey);
+  const el = document.getElementById('cm-' + safeKey);
+  const icon = document.getElementById('cm-icon-' + safeKey);
+  if (!el) return;
+  const open = el.classList.toggle('open');
   icon.textContent = open ? '▼' : '▶';
 }
 
@@ -1552,7 +1586,8 @@ function aggregateCasts() {
       avgAtmosphere: cr.atmosphere,
       avgTalk: cr.talk,
       favorite: cr.favorite || false,
-      diaryUrl: cr.diaryUrl || ''
+      diaryUrl: cr.diaryUrl || '',
+      memo: cr.memo || ''
     });
   });
 }
@@ -1632,6 +1667,12 @@ function renderCasts() {
       + '<div class="cast-rating-item">雰囲気 <span>' + c.avgAtmosphere + '</span></div>'
       + '<div class="cast-rating-item">トーク <span>' + c.avgTalk + '</span></div>'
       + '</div>'
+      + (c.memo ? '<div class="cast-memo-wrap">'
+        + '<button class="memo-toggle" onclick="toggleCastMemo(\'' + esc(castKey) + '\',event)">'
+        + '<span class="memo-toggle-icon" id="cm-icon-' + safeKey + '">▶</span> 一言メモ'
+        + '</button>'
+        + '<div class="cast-memo" id="cm-' + safeKey + '">' + esc(c.memo) + '</div>'
+        + '</div>' : '')
       + '</div>';
   }).join('');
   container.onclick = function(ev) {
