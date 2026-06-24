@@ -996,6 +996,10 @@
         <input type="range" min="0" max="100" value="50" id="r-talk" oninput="syncRating('talk',this)">
         <span class="rating-value" id="rv-talk">50</span>
       </div>
+      <div class="form-group" style="margin-top:12px">
+        <label class="form-label">一言メモ</label>
+        <textarea class="form-input form-textarea" id="f-cast-memo" rows="2" placeholder="感想・特徴など"></textarea>
+      </div>
     </div>
 
 
@@ -1588,6 +1592,8 @@ function openAddForm() {
   document.getElementById('f-amount').value = '';
   document.getElementById('f-course').value = '';
   document.getElementById('f-episode').value = '';
+  var cm = document.getElementById('f-cast-memo');
+  if (cm) cm.value = '';
   document.getElementById('f-kiss').checked = false;
   var ncr = document.getElementById('new-cast-ratings');
   if (ncr) ncr.style.display = 'none';
@@ -1659,12 +1665,14 @@ function saveEntry() {
   const ncr = document.getElementById('new-cast-ratings');
   if (ncr && ncr.style.display !== 'none') {
     const castKey = document.getElementById('f-cast').value.trim() + '|' + document.getElementById('f-store').value.trim();
+    var cmEl = document.getElementById('f-cast-memo');
     setCastRating(castKey, {
       appearance:   parseInt(document.getElementById('r-appearance').value),
       friendliness: parseInt(document.getElementById('r-friendliness').value),
       technique:    parseInt(document.getElementById('r-technique').value),
       atmosphere:   parseInt(document.getElementById('r-atmosphere').value),
-      talk:         parseInt(document.getElementById('r-talk').value)
+      talk:         parseInt(document.getElementById('r-talk').value),
+      memo:         cmEl ? cmEl.value.trim() : ''
     });
   }
   const list = load();
