@@ -1433,7 +1433,7 @@ function switchView(view) {
 }
 
 function aggregateCasts() {
-  const entries = loadEntries();
+  const entries = load();
   const map = {};
   entries.forEach(e => {
     if (currentCat !== 'all' && e.category !== currentCat) return;
