@@ -2185,7 +2185,7 @@ function openCastDetail(castKey) {
     html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px">';
     html += '<span style="font-size:.85rem;color:var(--text2)">指名回数：<b style="color:var(--text)">' + c.count + '回</b></span>';
     html += '<span style="font-size:.85rem;color:var(--text2)">総額：<b style="color:var(--gold)">¥' + c.totalAmount.toLocaleString() + '</b></span>';
-    if (c.kissCount) html += '<span style="font-size:.85rem">💋×' + c.kissCount + '</span>';
+
     html += '</div>';
     if (c.lastDate) {
       html += '<div style="font-size:.82rem;color:var(--text2);margin-bottom:10px">最終指名：<span style="color:var(--text)">' + c.lastDate + '</span>';
