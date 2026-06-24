@@ -1081,7 +1081,7 @@
       <button class="gps-btn" onclick="storeLocGPS()">現在地を取得</button>
     </div>
     <div class="gps-manual-row">
-      <input type="text" class="form-input gps-coord-input" id="store-loc-coords" placeholder="35.68950, 139.69171" inputmode="decimal">
+      <input type="text" class="form-input gps-coord-input" id="store-loc-coords" placeholder="35.68950, 139.69171" inputmode="decimal" onblur="storeLocCoordsBlur()">
     </div>
     <div style="display:flex;gap:8px;margin-top:8px">
       <input type="text" class="form-input" id="store-loc-pref" placeholder="都道府県" style="flex:1">
@@ -2116,6 +2116,21 @@ function storeLocGPS() {
       })
       .catch(function() {});
   }, function() { alert('位置情報の取得に失敗しました'); });
+}
+function storeLocCoordsBlur() {
+  var raw = (document.getElementById('store-loc-coords').value || '').trim();
+  var m = raw.match(/^\(?\s*(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)\s*\)?$/);
+  if (!m) return;
+  var lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+  fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&accept-language=ja')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var addr = data.address || {};
+      document.getElementById('store-loc-pref').value = addr.state || addr.province || '';
+      document.getElementById('store-loc-city').value = addr.city || addr.town || addr.village || addr.suburb || '';
+    })
+    .catch(function() {});
 }
 function applyStoreLocCoords() {
   var raw = (document.getElementById('store-loc-coords').value || '').trim();
