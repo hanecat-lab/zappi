@@ -2223,9 +2223,13 @@ function openCastDetail(castKey) {
 
     html += '</div>';
     if (c.lastDate) {
-      html += '<div style="font-size:.82rem;color:var(--text2);margin-bottom:10px">最終指名：<span style="color:var(--text)">' + c.lastDate + '</span>';
+      html += '<div style="font-size:.82rem;color:var(--text2);margin-bottom:6px">最終指名：<span style="color:var(--text)">' + c.lastDate + '</span>';
       if (diff !== null) html += ' <span style="font-size:11px;color:' + diffCol + '">(' + diff + '日前)</span>';
       html += '</div>';
+    }
+    var latestMemo = entries.length > 0 && entries[0].memo ? entries[0].memo : '';
+    if (latestMemo) {
+      html += '<div style="font-size:.82rem;color:var(--text);opacity:.85;margin-bottom:4px">' + esc(latestMemo) + '</div>';
     }
     html += '</div>';
   }
