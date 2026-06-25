@@ -2134,6 +2134,22 @@ function renderStats() {
   });
   const catRows = Object.keys(catMap).sort(function(a,b) { return catMap[b].count - catMap[a].count; });
 
+  // cospa breakdown
+  const COSPA_ORDER = ['💎','🌸','🍒','🌱','💸'];
+  const cospaEntriesAll = entries.filter(function(e) { return e.cospa; });
+  const cospaTotal = cospaEntriesAll.length;
+  const cospaMap = {};
+  COSPA_ORDER.forEach(function(c) { cospaMap[c] = 0; });
+  cospaEntriesAll.forEach(function(e) { if (cospaMap[e.cospa] !== undefined) cospaMap[e.cospa]++; });
+  const maxCospa = Math.max.apply(null, COSPA_ORDER.map(function(c) { return cospaMap[c]; })) || 1;
+
+  const catCospaMap = {};
+  entries.forEach(function(e) {
+    if (!e.cospa) return;
+    if (!catCospaMap[e.category]) catCospaMap[e.category] = {};
+    catCospaMap[e.category][e.cospa] = (catCospaMap[e.category][e.cospa] || 0) + 1;
+  });
+
   const monthBars = months.map(function(m) {
     const d = monthMap[m];
     const pct = Math.round(d.amount / maxAmt * 100);
@@ -2164,7 +2180,36 @@ function renderStats() {
     + '<div class="stats-total-card"><div class="stats-total-label">平均単価</div><div class="stats-total-value gold">¥' + avgAmount.toLocaleString() + '</div></div>'
     + '</div>'
     + '<div class="stats-section"><div class="stats-title">月別金額（直近6ヶ月）</div>' + (monthBars || '<div style="color:var(--text2);font-size:.82rem">データなし</div>') + '</div>'
-    + '<div class="stats-section"><div class="stats-title">カテゴリー内訳</div>' + catRowsHtml + '</div>';
+    + '<div class="stats-section"><div class="stats-title">カテゴリー内訳</div>' + catRowsHtml + '</div>'
+    + (function() {
+        if (!cospaTotal) return '';
+        var cospaRowsHtml = COSPA_ORDER.map(function(c) {
+          var count = cospaMap[c] || 0;
+          var pct = Math.round(count / maxCospa * 100);
+          var pctOf = Math.round(count / cospaTotal * 100);
+          return '<div class="month-bar-row">'
+            + '<span class="month-bar-label" style="font-size:1rem;width:28px;text-align:center">' + c + '</span>'
+            + '<div class="month-bar-wrap"><div class="month-bar-fill" style="width:' + pct + '%"></div></div>'
+            + '<span class="month-bar-val">' + count + '件 <span style="font-size:.7rem">(' + pctOf + '%)</span></span>'
+            + '</div>';
+        }).join('');
+        var catCospaHtml = Object.keys(catCospaMap).sort().map(function(name) {
+          var col = catColor(name);
+          var counts = catCospaMap[name];
+          var badges = COSPA_ORDER.map(function(c) {
+            var n = counts[c] || 0;
+            if (!n) return '';
+            return '<span style="margin-right:6px">' + c + '<span style="font-size:.72rem;color:var(--text2)">×' + n + '</span></span>';
+          }).join('');
+          return '<div class="cat-stat-row">'
+            + '<span class="cat-stat-dot" style="background:' + col + ';box-shadow:0 0 6px ' + col + '"></span>'
+            + '<span class="cat-stat-name">' + esc(name) + '</span>'
+            + '<span>' + badges + '</span>'
+            + '</div>';
+        }).join('');
+        return '<div class="stats-section"><div class="stats-title">コスパ 総計</div>' + cospaRowsHtml + '</div>'
+          + '<div class="stats-section"><div class="stats-title">コスパ カテゴリー別</div>' + catCospaHtml + '</div>';
+      })();
 }
 
 
