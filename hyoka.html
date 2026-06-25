@@ -760,6 +760,8 @@
   /* ── store location row ── */
   .store-loc-row { display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:8px; border-top:1px solid rgba(0,229,255,.15); }
   .store-loc-link { font-size:.78rem; color:var(--neon-cyan); text-decoration:none; text-shadow:0 0 6px rgba(0,229,255,.35); }
+  .store-url-btn { background:transparent; border:none; font-size:1rem; cursor:pointer; padding:2px 4px; line-height:1; color:var(--text2); opacity:.4; margin-right:2px; flex-shrink:0; }
+  .store-url-btn.has-url { color:var(--neon-cyan); opacity:1; }
   /* ── cospa buttons ── */
   .cospa-btns { display:flex; gap:8px; margin-top:6px; }
   .cospa-btn { flex:1; padding:7px 0; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--text2); font-size:1.2rem; cursor:pointer; transition:.15s; }
@@ -1119,6 +1121,10 @@ function setStoreLoc(name, pref, city, town) {
 function isLocCat(cat) { return LOC_CATS.includes(cat || formCat); }
 
 const SMKEY = 'hyoka_store_memo_v1';
+const SUKEY = 'hyoka_store_url_v1';
+function loadStoreUrls() { try { return JSON.parse(localStorage.getItem(SUKEY) || '{}'); } catch(e) { return {}; } }
+function saveStoreUrls(m) { localStorage.setItem(SUKEY, JSON.stringify(m)); }
+function getStoreUrl(name) { return loadStoreUrls()[name] || ''; }
 const CRKEY = 'hyoka_cast_ratings_v1';
 function loadCastRatings() { try { return JSON.parse(localStorage.getItem(CRKEY) || '{}'); } catch(e) { return {}; } }
 function saveCastRatings(r) { localStorage.setItem(CRKEY, JSON.stringify(r)); }
@@ -1814,6 +1820,7 @@ function exportData() {
     categories: loadCats(),
     storeLocs: loadStoreLocs(),
     storeMemos: loadStoreMemos(),
+    storeUrls: loadStoreUrls(),
     castRatings: loadCastRatings()
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1849,6 +1856,7 @@ function importData(ev) {
       }
       if (data.storeMemos && typeof data.storeMemos === 'object') {
         saveStoreMemos(data.storeMemos);
+        if (data.storeUrls) saveStoreUrls(data.storeUrls);
       }
       if (data.castRatings && typeof data.castRatings === 'object') {
         saveCastRatings(data.castRatings);
@@ -2014,9 +2022,11 @@ function renderStores() {
   }
   container.innerHTML = stores.map(function(s) {
     const col = catColor(s.category);
+    const storeUrl = getStoreUrl(s.storeName);
     return '<div class="store-card">'
       + '<div class="store-card-header">'
-      + '<div>'
+      + '<div style="display:flex;align-items:center">'
+      + '<button class="store-url-btn' + (storeUrl ? ' has-url' : '') + '" data-storeurlname="' + esc(s.storeName) + '">🔗</button>'
       + '<span class="store-name-main">' + esc(s.storeName) + '</span>'
       + '<span style="margin-left:8px;font-size:11px;border:1px solid ' + col + ';color:' + col + ';border-radius:8px;padding:1px 7px;">' + esc(s.category) + '</span>'
       + '</div>'
@@ -2051,6 +2061,49 @@ function renderStores() {
         })() : '')
       + '</div>';
   }).join('');
+
+  var storeUrlLpTimer = null;
+  var storeUrlLongPressFired = false;
+  container.addEventListener('touchstart', function(ev) {
+    var btn = ev.target.closest('[data-storeurlname]');
+    if (!btn) return;
+    storeUrlLongPressFired = false;
+    storeUrlLpTimer = setTimeout(function() {
+      storeUrlLongPressFired = true;
+      storeUrlLpTimer = null;
+      var name = btn.dataset.storeurlname;
+      var urls = loadStoreUrls();
+      var url = prompt('URL（空白で削除）', urls[name] || '');
+      if (url === null) return;
+      if (url.trim()) urls[name] = url.trim(); else delete urls[name];
+      saveStoreUrls(urls);
+      renderStores();
+    }, 500);
+  }, { passive: true });
+  function cancelStoreUrlLp() { if (storeUrlLpTimer) { clearTimeout(storeUrlLpTimer); storeUrlLpTimer = null; } }
+  container.addEventListener('touchend', cancelStoreUrlLp);
+  container.addEventListener('touchcancel', cancelStoreUrlLp);
+  container.addEventListener('touchmove', cancelStoreUrlLp);
+  container.addEventListener('click', function(ev) {
+    var btn = ev.target.closest('[data-storeurlname]');
+    if (!btn) return;
+    if (storeUrlLongPressFired) { storeUrlLongPressFired = false; return; }
+    ev.stopPropagation();
+    var name = btn.dataset.storeurlname;
+    var urls = loadStoreUrls();
+    var url = urls[name] || '';
+    if (url) {
+      window.open(url, '_blank');
+    } else {
+      var newUrl = prompt('URLを入力してください', '');
+      if (newUrl === null) return;
+      newUrl = newUrl.trim();
+      if (!newUrl) return;
+      urls[name] = newUrl;
+      saveStoreUrls(urls);
+      renderStores();
+    }
+  });
 }
 
 
