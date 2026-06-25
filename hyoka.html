@@ -868,7 +868,7 @@
   <div class="sort-bar">
     <span class="sort-label">ソート：</span>
     <button class="sort-btn" data-sort="fav" onclick="setSort(this,'fav')">⭐お気に入り</button>
-    <button class="sort-btn" data-sort="cospa" onclick="setSort(this,'cospa')">😊 満足度</button>
+    <button class="sort-btn" data-sort="cospa" onclick="setSort(this,'cospa')">💎 満足度</button>
     <button class="sort-btn active" data-sort="date" onclick="setSort(this,'date')">日付</button>
     <button class="sort-btn" data-sort="amount" onclick="setSort(this,'amount')">金額</button>
     <button class="sort-btn" data-sort="dist" onclick="setSort(this,'dist')">近さ</button>
@@ -978,11 +978,11 @@
       <div class="form-group" style="margin-top:12px">
         <label class="form-label">コスパ</label>
         <div class="cospa-btns">
-          <button type="button" class="cospa-btn" data-cospa="😠" onclick="selectCospa('😠')">😠</button>
-          <button type="button" class="cospa-btn" data-cospa="😟" onclick="selectCospa('😟')">😟</button>
-          <button type="button" class="cospa-btn" data-cospa="😐" onclick="selectCospa('😐')">😐</button>
-          <button type="button" class="cospa-btn" data-cospa="😊" onclick="selectCospa('😊')">😊</button>
-          <button type="button" class="cospa-btn" data-cospa="😄" onclick="selectCospa('😄')">😄</button>
+          <button type="button" class="cospa-btn" data-cospa="🪨" onclick="selectCospa('🪨')">🪨</button>
+          <button type="button" class="cospa-btn" data-cospa="🪙" onclick="selectCospa('🪙')">🪙</button>
+          <button type="button" class="cospa-btn" data-cospa="💰" onclick="selectCospa('💰')">💰</button>
+          <button type="button" class="cospa-btn" data-cospa="💳" onclick="selectCospa('💳')">💳</button>
+          <button type="button" class="cospa-btn" data-cospa="💎" onclick="selectCospa('💎')">💎</button>
         </div>
       </div>
     </div>
@@ -1497,7 +1497,7 @@ function sortList(list) {
       case 'atmosphere':   return b.ratings.atmosphere   - a.ratings.atmosphere;
       case 'talk':         return (b.ratings.talk||0)        - (a.ratings.talk||0);
       case 'fav':          return (b.favorite?1:0) - (a.favorite?1:0);
-      case 'cospa': { var o={'😄':5,'😊':4,'😐':3,'😟':2,'😠':1}; return (o[b.cospa]||0)-(o[a.cospa]||0); }
+      case 'cospa': { var o={'💎':5,'💳':4,'💰':3,'🪙':2,'🪨':1}; return (o[b.cospa]||0)-(o[a.cospa]||0); }
       default: return 0;
     }
   });
