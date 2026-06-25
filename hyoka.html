@@ -1190,7 +1190,9 @@ function getCastRating(castKey) {
     favorite:     r.favorite     || false,
     diaryUrl:     r.diaryUrl     || '',
     memo:            r.memo            || '',
-    ratingUpdatedAt: r.ratingUpdatedAt || ''
+    ratingUpdatedAt: r.ratingUpdatedAt || '',
+    initialRatings:  r.initialRatings  || null,
+    initialRatedAt:  r.initialRatedAt  || ''
   };
 }
 function setCastRating(castKey, ratings) {
@@ -2634,18 +2636,24 @@ function openCastDetail(castKey) {
   var rLabels = ['理解感','リード力','安心感','愛嬌・親しみやすさ','容姿','また会いたい度'];
   html += '<div style="padding:14px 0 16px;border-bottom:2px solid var(--border)">';
   html += '<div onclick="toggleCastRating()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:var(--text2);margin-bottom:0;letter-spacing:.05em">';
+  var initialAt = cr.initialRatedAt ? '<span style="font-size:.72rem;color:var(--text2);margin-left:6px">初回 ' + cr.initialRatedAt + '</span>' : '';
   var ratedAt = cr.ratingUpdatedAt ? '<span style="font-size:.72rem;color:var(--text2);margin-left:6px">更新 ' + cr.ratingUpdatedAt + '</span>' : '';
-  html += '評価' + ratedAt + ' <span id="cast-rating-chevron" style="font-size:.75rem">▶</span></div>';
+  html += '評価' + initialAt + ratedAt + ' <span id="cast-rating-chevron" style="font-size:.75rem">▶</span></div>';
   html += '<div id="cast-rating-body" style="display:none">';
   for (var ri = 0; ri < rKeys.length; ri++) {
     var rk = rKeys[ri];
     var rv = cr[rk] !== undefined ? cr[rk] : 50;
+    var initVal = (cr.initialRatings && cr.initialRatings[rk] != null) ? cr.initialRatings[rk] : null;
+    var initBadge = initVal != null
+      ? '<span style="font-size:.72rem;color:var(--text2);width:32px;text-align:right;flex-shrink:0">初 ' + initVal + '</span>'
+      : '<span style="width:32px;flex-shrink:0"></span>';
     html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
     html += '<span style="font-size:.8rem;color:var(--text2);width:52px;flex-shrink:0">' + rLabels[ri] + '</span>';
     html += '<input type="range" min="0" max="100" value="' + rv + '" id="cr-' + rk + '-' + castKey2.replace(/[^a-zA-Z0-9]/g,'_') + '"';
     html += ' oninput="this.nextElementSibling.textContent=this.value;refreshSliderBg(this)"';
     html += ' style="flex:1">';
     html += '<span style="font-size:.82rem;color:var(--accent2);font-weight:700;width:26px;text-align:right">' + rv + '</span>';
+    html += initBadge;
     html += '</div>';
   }
   html += '<div style="margin-top:10px;margin-bottom:8px">';
@@ -2710,7 +2718,14 @@ function saveCastRatingFromModal(btn) {
   var memoEl = document.getElementById('cr-memo-' + safeId);
   if (memoEl) ratings.memo = memoEl.value.trim();
   var existing = loadCastRatings()[currentCastKey] || {};
-  setCastRating(currentCastKey, Object.assign({}, existing, ratings, { ratingUpdatedAt: todayStr() }));
+  var isFirst = !existing.ratingUpdatedAt;
+  var update = Object.assign({}, existing, ratings, { ratingUpdatedAt: todayStr() });
+  if (isFirst) {
+    update.initialRatings = {};
+    rKeys.forEach(function(k) { update.initialRatings[k] = ratings[k]; });
+    update.initialRatedAt = todayStr();
+  }
+  setCastRating(currentCastKey, update);
   renderCasts();
   if (btn) { btn.textContent = '保存済み'; setTimeout(function() { btn.textContent = '保存'; }, 1200); }
 }
