@@ -296,8 +296,6 @@
     .mini-bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg,#7c3aed,#a855f7); }
     .mini-score { color: var(--text2); font-size: 0.7rem; width: 22px; text-align: right; }
 
-    .entry-dist { font-size: 0.72rem; color: var(--text2); margin-top: 7px; }
-
     .empty-state { text-align: center; padding: 70px 20px; color: var(--text2); }
     .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
     .empty-text { font-size: 0.9rem; }
@@ -450,23 +448,6 @@
       width: 28px;
       text-align: right;
     }
-
-    .gps-row { display: flex; gap: 10px; align-items: center; }
-
-    .gps-btn {
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid var(--accent);
-      background: rgba(124,58,237,0.1);
-      color: var(--accent2);
-      font-size: 0.85rem;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.15s;
-    }
-    .gps-btn:active { background: var(--accent); color: white; }
-
-    .gps-status { font-size: 0.76rem; color: var(--text2); word-break: break-all; }
 
     .submit-btn {
       width: 100%;
@@ -714,26 +695,6 @@
   }
   .cast-memo.open { display: block; }
 
-  /* ---- collapsible location panel ---- */
-  .location-toggle {
-    width: 100%; display: flex; align-items: center; justify-content: space-between;
-    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
-    padding: 11px 13px; color: var(--text); font-size: 0.88rem; cursor: pointer;
-    transition: border-color .15s;
-  }
-  .location-toggle:active { border-color: var(--neon-cyan); }
-  #gps-status-inline { font-size: 0.76rem; color: var(--neon-cyan); flex: 1; text-align: right; margin-right: 8px; word-break: break-all; text-shadow: 0 0 6px rgba(0,229,255,.3); }
-  .location-chevron { font-size: 0.6rem; color: var(--text2); transition: transform .2s; flex-shrink: 0; }
-  .location-chevron.open { transform: rotate(90deg); }
-  .location-panel {
-    display: none; margin-top: 10px;
-    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
-    padding: 12px 12px 14px;
-  }
-  .location-panel.open { display: block; }
-  .gps-manual-row { display: flex; gap: 8px; align-items: center; }
-  .gps-coord-input { flex: 1; padding: 9px 10px; font-size: 0.85rem; }
-
   /* ── favorite ── */
   .fav-btn {
     background: transparent; border: none; cursor: pointer;
@@ -871,7 +832,6 @@
     <button class="sort-btn" data-sort="cospa" onclick="setSort(this,'cospa')">💎 満足度</button>
     <button class="sort-btn active" data-sort="date" onclick="setSort(this,'date')">日付</button>
     <button class="sort-btn" data-sort="amount" onclick="setSort(this,'amount')">金額</button>
-    <button class="sort-btn" data-sort="dist" onclick="setSort(this,'dist')">近さ</button>
     <button class="sort-btn" data-sort="appearance" onclick="setSort(this,'appearance')">容姿</button>
     <button class="sort-btn" data-sort="friendliness" onclick="setSort(this,'friendliness')">接客</button>
     <button class="sort-btn" data-sort="technique" onclick="setSort(this,'technique')">テクニック</button>
@@ -945,25 +905,6 @@
     <div class="form-group">
       <label class="form-label">場所メモ</label>
       <input type="text" class="form-input" id="f-location" placeholder="場所・アクセスなど">
-    </div>
-
-    <div class="form-group" id="location-form-group">
-      <button class="location-toggle" onclick="toggleLocationPanel()" id="location-toggle">
-        <span>📍 位置情報</span>
-        <span id="gps-status-inline">未記録</span>
-        <span id="location-chevron" class="location-chevron">▶</span>
-      </button>
-      <div class="location-panel" id="location-panel">
-        <div id="store-loc-hint" style="display:none;font-size:.75rem;color:var(--neon-cyan);margin-bottom:8px;text-shadow:0 0 6px rgba(0,229,255,.35)"></div>
-        <div class="gps-row" style="margin-bottom:10px">
-          <button class="gps-btn" onclick="recordGPS()">現在地を記録</button>
-          <span class="gps-status" id="gps-status"></span>
-        </div>
-        <div class="gps-manual-row">
-          <input type="text" class="form-input gps-coord-input" id="f-coords" placeholder="35.68950, 139.69171" inputmode="decimal">
-          <button class="gps-btn" onclick="applyManualCoords()" style="white-space:nowrap">確定</button>
-        </div>
-      </div>
     </div>
 
     <div class="form-row2">
@@ -1105,18 +1046,12 @@
       <button class="modal-close" onclick="closeStoreLocModal()">✕</button>
     </div>
     <div id="store-loc-modal-name" style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--text)"></div>
-    <div class="gps-row" style="margin-bottom:10px">
-      <button class="gps-btn" onclick="storeLocGPS()">現在地を取得</button>
-    </div>
-    <div class="gps-manual-row">
-      <input type="text" class="form-input gps-coord-input" id="store-loc-coords" placeholder="35.68950, 139.69171" inputmode="decimal" onblur="storeLocCoordsBlur()">
-    </div>
     <div style="display:flex;gap:8px;margin-top:8px">
       <input type="text" class="form-input" id="store-loc-pref" placeholder="都道府県" style="flex:1">
       <input type="text" class="form-input" id="store-loc-city" placeholder="市町村" style="flex:2">
     </div>
     <div style="margin-top:12px">
-      <button class="gps-btn" onclick="applyStoreLocCoords()" style="white-space:nowrap;width:100%">確定</button>
+      <button class="submit-btn" onclick="saveStoreLocManual()" style="padding:12px">保存</button>
     </div>
   </div>
 </div>
@@ -1175,9 +1110,9 @@ const SLKEY = 'hyoka_store_locs_v1';
 function loadStoreLocs() { try { return JSON.parse(localStorage.getItem(SLKEY) || '{}'); } catch(e) { return {}; } }
 function saveStoreLocs(m) { localStorage.setItem(SLKEY, JSON.stringify(m)); }
 function getStoreLoc(name) { return loadStoreLocs()[name] || null; }
-function setStoreLoc(name, lat, lng, pref, city) {
+function setStoreLoc(name, pref, city) {
   const m = loadStoreLocs();
-  m[name] = { lat: lat, lng: lng, pref: pref || '', city: city || '' };
+  m[name] = { pref: pref || '', city: city || '' };
   saveStoreLocs(m);
 }
 function isLocCat(cat) { return LOC_CATS.includes(cat || formCat); }
@@ -1213,19 +1148,6 @@ function setStoreMemo(name, text) {
   saveStoreMemos(m);
 }
 
-// Apply saved store location to the form (if exists)
-function applyStoreLoc(name) {
-  if (!isLocCat()) return;
-  const loc = getStoreLoc(name);
-  if (loc) { setGPS(loc.lat, loc.lng); showLocHint('この店舗の保存済み場所を読み込みました'); }
-  else { showLocHint(''); }
-}
-function showLocHint(msg) {
-  let h = document.getElementById('store-loc-hint');
-  if (!h) return;
-  h.textContent = msg;
-  h.style.display = msg ? 'block' : 'none';
-}
 
 const DEFAULT_CATS = [
   { name: 'デリ',   color: '#60a5fa' },
@@ -1285,87 +1207,9 @@ function filterCatName(btn, cat) {
 }
 
 
-// ===== GPS =====
-let myGPS = null;
-let formGPS = null;
-
 function initApp() {
   renderCatTabs();
   switchView(currentView);
-}
-
-function locateMe() {
-  if (!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(
-    p => { myGPS = { lat: p.coords.latitude, lng: p.coords.longitude }; if (currentView === 'records') renderList(); },
-    () => {}
-  );
-}
-
-function toggleLocationPanel() {
-  const panel = document.getElementById('location-panel');
-  const chev = document.getElementById('location-chevron');
-  const isOpen = panel.classList.toggle('open');
-  chev.classList.toggle('open', isOpen);
-}
-
-function setGPS(lat, lng) {
-  formGPS = { lat: lat, lng: lng };
-  const txt = lat.toFixed(5) + ', ' + lng.toFixed(5);
-  const s = document.getElementById('gps-status');
-  const si = document.getElementById('gps-status-inline');
-  if (s) s.textContent = txt;
-  if (si) si.textContent = txt;
-  const fc = document.getElementById('f-coords');
-  if (fc) fc.value = txt;
-}
-
-function applyManualCoords() {
-  const raw = (document.getElementById('f-coords').value || '').trim();
-  const m = raw.match(/^\(?\s*(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)\s*\)?$/);
-  if (!m) { alert('座標の形式が正しくありません\n例：35.68950, 139.69171'); return; }
-  const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-    alert('範囲外の値です（緯度 -90〜90、経度 -180〜180）');
-    return;
-  }
-  setGPS(lat, lng);
-}
-
-function clearGPS() {
-  formGPS = null;
-  const s = document.getElementById('gps-status');
-  const si = document.getElementById('gps-status-inline');
-  if (s) s.textContent = '未記録';
-  if (si) si.textContent = '未記録';
-  const fc = document.getElementById('f-coords');
-  if (fc) fc.value = '';
-}
-
-function recordGPS() {
-  if (!navigator.geolocation) {
-    document.getElementById('gps-status').textContent = '非対応';
-    return;
-  }
-  document.getElementById('gps-status').textContent = '取得中...';
-  navigator.geolocation.getCurrentPosition(
-    p => { setGPS(p.coords.latitude, p.coords.longitude); },
-    () => { document.getElementById('gps-status').textContent = '取得に失敗しました'; }
-  );
-}
-
-function haversine(a, b) {
-  if (!a || !b) return Infinity;
-  const R = 6371000, r = Math.PI/180;
-  const dLat = (b.lat - a.lat) * r;
-  const dLng = (b.lng - a.lng) * r;
-  const x = Math.sin(dLat/2)**2 + Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
-}
-
-function fmtDist(m) {
-  if (m === Infinity) return null;
-  return m < 1000 ? Math.round(m) + 'm' : (m/1000).toFixed(1) + 'km';
 }
 
 // ===== STATE =====
@@ -1404,7 +1248,6 @@ function renderList() {
   }
 
   el.innerHTML = list.map(e => {
-    const dist = e.gps ? fmtDist(haversine(myGPS, e.gps)) : null;
     const col = catColor(e.category);
     return `
       <div class="entry-card${e.favorite ? ' fav-card' : ''}" onclick="openDetail('${e.id}')">
@@ -1422,7 +1265,6 @@ function renderList() {
             ${e.cospa ? `<div class="entry-cospa">${esc(e.cospa)}</div>` : ''}
           </div>
         </div>
-        ${dist ? `<div class="entry-dist">📍 現在地から ${dist}</div>` : ''}
         ${e.memo ? `
         <div class="entry-memo-wrap">
           <button class="memo-toggle" onclick="toggleMemo('${e.id}', event)">
@@ -1490,7 +1332,6 @@ function sortList(list) {
     switch(currentSort) {
       case 'date':         return (b.date||'').localeCompare(a.date||'');
       case 'amount':       return (b.amount||0) - (a.amount||0);
-      case 'dist':         return haversine(myGPS,a.gps) - haversine(myGPS,b.gps);
       case 'appearance':   return b.ratings.appearance   - a.ratings.appearance;
       case 'friendliness': return b.ratings.friendliness - a.ratings.friendliness;
       case 'technique':    return b.ratings.technique    - a.ratings.technique;
@@ -1756,7 +1597,6 @@ function setSort(btn, sort) {
   document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   currentSort = sort;
-  if (sort === 'dist' && !myGPS) { locateMe(); return; }
   renderList();
 }
 
@@ -1766,7 +1606,6 @@ const RATINGS = ['appearance','friendliness','technique','atmosphere','talk'];
 function openAddForm() {
   editId  = null;
   formCat = '';
-  formGPS = null;
   document.getElementById('form-title').textContent = '新規記録';
   document.getElementById('f-date').value = todayStr();
   document.getElementById('f-store').value = '';
@@ -1788,14 +1627,7 @@ function openAddForm() {
     var sl = document.getElementById('r-' + k);
     if (sl) { sl.value = 50; document.getElementById('rv-' + k).textContent = 50; }
   });
-  clearGPS();
-  const panel = document.getElementById('location-panel');
-  const chev = document.getElementById('location-chevron');
-  if (panel) { panel.classList.remove('open'); }
-  if (chev) { chev.classList.remove('open'); }
   renderCatSelect();
-  var lfg = document.getElementById('location-form-group');
-  if (lfg) lfg.style.display = '';
   document.getElementById('delete-btn').style.display = 'none';
   document.getElementById('form-modal').classList.add('open');
 }
@@ -1805,7 +1637,6 @@ function openEditForm(id) {
   if (!e) return;
   editId  = id;
   formCat = e.category;
-  formGPS = e.gps || null;
   document.getElementById('form-title').textContent = '編集';
   document.getElementById('f-date').value = e.date || '';
   document.getElementById('f-store').value = e.storeName || '';
@@ -1819,10 +1650,7 @@ function openEditForm(id) {
   formCospa = e.cospa || '';
   document.querySelectorAll('.cospa-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.cospa === formCospa); });
   document.getElementById('f-kiss').checked = e.kiss || false;
-  if (e.gps) { setGPS(e.gps.lat, e.gps.lng); } else { clearGPS(); }
   selectCat(e.category);
-  var lfg = document.getElementById('location-form-group');
-  if (lfg) lfg.style.display = LOC_CATS.includes(e.category) ? 'none' : '';
   document.getElementById('delete-btn').style.display = 'block';
   closeDetail();
   document.getElementById('form-modal').classList.add('open');
@@ -1834,11 +1662,6 @@ function bgCloseForm(e) { if (e.target.id === 'form-modal') closeForm(); }
 function selectCat(cat) {
   formCat = cat;
   renderCatSelect();
-  const name = (document.getElementById('f-store') || {}).value;
-  if (name && name.trim()) applyStoreLoc(name.trim());
-  else showLocHint('');
-  var lfg = document.getElementById('location-form-group');
-  if (lfg) lfg.style.display = LOC_CATS.includes(cat) ? 'none' : '';
 }
 
 function setSlider(key, val) {
@@ -1882,7 +1705,6 @@ function saveEntry() {
     storeName:    document.getElementById('f-store').value.trim(),
     castName:     document.getElementById('f-cast').value.trim(),
     locationMemo: document.getElementById('f-location').value.trim(),
-    gps:          formGPS,
     amount:       parseInt(document.getElementById('f-amount').value) || 0,
     course:       document.getElementById('f-course').value.trim(),
     cospa:        formCospa,
@@ -1899,9 +1721,6 @@ function saveEntry() {
     list.push(entry);
   }
 
-  if (isLocCat(entry.category) && entry.gps && entry.storeName) {
-    setStoreLoc(entry.storeName, entry.gps.lat, entry.gps.lng);
-  }
   save(list);
   closeForm();
   renderList();
@@ -2219,12 +2038,9 @@ function renderStores() {
         })()
       + (LOC_CATS.includes(s.category) ? (function() {
           const loc = getStoreLoc(s.storeName);
-          if (loc) {
-            var locLabel = (loc.pref || loc.city)
-              ? (loc.pref || '') + (loc.city || '')
-              : loc.lat.toFixed(5) + ', ' + loc.lng.toFixed(5);
+          if (loc && (loc.pref || loc.city)) {
             return '<div class="store-loc-row">'
-              + '<a href="https://maps.google.com/?q=' + loc.lat + ',' + loc.lng + '" target="_blank" class="store-loc-link">📍 ' + esc(locLabel) + '</a>'
+              + '<span class="store-loc-link">📍 ' + esc((loc.pref || '') + (loc.city || '')) + '</span>'
               + '<button class="store-loc-del" onclick="deleteStoreLoc(\'' + esc(s.storeName).replace(/'/g, "\\'") + '\',event)">✕</button>'
               + '</div>';
           }
@@ -2242,9 +2058,9 @@ function registerStoreLoc(name, ev) {
   if (ev) ev.stopPropagation();
   storeLocTarget = name;
   document.getElementById('store-loc-modal-name').textContent = name;
-  document.getElementById('store-loc-coords').value = '';
-  document.getElementById('store-loc-pref').value = '';
-  document.getElementById('store-loc-city').value = '';
+  const existLoc = getStoreLoc(name) || {};
+  document.getElementById('store-loc-pref').value = existLoc.pref || '';
+  document.getElementById('store-loc-city').value = existLoc.city || '';
   document.getElementById('store-loc-modal').classList.add('open');
 }
 function closeStoreLocModal() {
@@ -2253,60 +2069,12 @@ function closeStoreLocModal() {
 function bgCloseStoreLoc(e) {
   if (e.target.id === 'store-loc-modal') closeStoreLocModal();
 }
-function storeLocGPS() {
-  if (!navigator.geolocation) { alert('位置情報が使用できません'); return; }
-  navigator.geolocation.getCurrentPosition(function(p) {
-    var lat = p.coords.latitude, lng = p.coords.longitude;
-    document.getElementById('store-loc-coords').value = lat.toFixed(5) + ', ' + lng.toFixed(5);
-    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&accept-language=ja')
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        var addr = data.address || {};
-        document.getElementById('store-loc-pref').value = addr.state || addr.province || '';
-        document.getElementById('store-loc-city').value = addr.city || addr.town || addr.village || addr.suburb || '';
-      })
-      .catch(function() {});
-  }, function() { alert('位置情報の取得に失敗しました'); });
-}
-function storeLocCoordsBlur() {
-  var raw = (document.getElementById('store-loc-coords').value || '').trim();
-  var m = raw.match(/^\(?\s*(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)\s*\)?$/);
-  if (!m) return;
-  var lat = parseFloat(m[1]), lng = parseFloat(m[2]);
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
-  fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&accept-language=ja')
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      var addr = data.address || {};
-      document.getElementById('store-loc-pref').value = addr.state || addr.province || '';
-      document.getElementById('store-loc-city').value = addr.city || addr.town || addr.village || addr.suburb || '';
-    })
-    .catch(function() {});
-}
-function applyStoreLocCoords() {
-  var raw = (document.getElementById('store-loc-coords').value || '').trim();
-  var m = raw.match(/^\(?\s*(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)\s*\)?$/);
-  if (!m) { alert('座標の形式が正しくありません\n例：35.68950, 139.69171'); return; }
-  var lat = parseFloat(m[1]), lng = parseFloat(m[2]);
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) { alert('範囲外の値です（緯度 -90〜90、経度 -180〜180）'); return; }
+function saveStoreLocManual() {
   var pref = (document.getElementById('store-loc-pref').value || '').trim();
   var city = (document.getElementById('store-loc-city').value || '').trim();
-  function save(p, c) {
-    setStoreLoc(storeLocTarget, lat, lng, p, c);
-    closeStoreLocModal();
-    renderStores();
-  }
-  if (!pref && !city) {
-    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&accept-language=ja')
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        var addr = data.address || {};
-        save(addr.state || addr.province || '', addr.city || addr.town || addr.village || addr.suburb || '');
-      })
-      .catch(function() { save('', ''); });
-  } else {
-    save(pref, city);
-  }
+  setStoreLoc(storeLocTarget, pref, city);
+  closeStoreLocModal();
+  renderStores();
 }
 
 function editStoreMemo(name) {
