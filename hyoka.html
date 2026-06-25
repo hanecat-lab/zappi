@@ -1251,7 +1251,7 @@ function renderList() {
   el.innerHTML = list.map(e => {
     const col = catColor(e.category);
     return `
-      <div class="entry-card${e.favorite ? ' fav-card' : ''}" onclick="openDetail('${e.id}')">
+      <div class="entry-card${e.favorite ? ' fav-card' : ''}" onclick="openEditForm('${e.id}')">
         <span class="entry-cat-badge" style="background:${hexToRgba(col,0.16)};color:${col};box-shadow:0 0 8px ${hexToRgba(col,0.4)}">${esc(e.category)}</span>
         <button class="fav-btn" onclick="toggleFav('${e.id}',event)" title="お気に入り">${e.favorite ? '★' : '☆'}</button>
         <div class="entry-card-header">
