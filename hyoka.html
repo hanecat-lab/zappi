@@ -1049,6 +1049,7 @@
     <div style="display:flex;gap:8px;margin-top:8px">
       <input type="text" class="form-input" id="store-loc-pref" placeholder="都道府県" style="flex:1">
       <input type="text" class="form-input" id="store-loc-city" placeholder="市町村" style="flex:2">
+      <input type="text" class="form-input" id="store-loc-town" placeholder="町丁名" style="flex:2;margin-top:8px">
     </div>
     <div style="margin-top:12px">
       <button class="submit-btn" onclick="saveStoreLocManual()" style="padding:12px">保存</button>
@@ -1110,9 +1111,9 @@ const SLKEY = 'hyoka_store_locs_v1';
 function loadStoreLocs() { try { return JSON.parse(localStorage.getItem(SLKEY) || '{}'); } catch(e) { return {}; } }
 function saveStoreLocs(m) { localStorage.setItem(SLKEY, JSON.stringify(m)); }
 function getStoreLoc(name) { return loadStoreLocs()[name] || null; }
-function setStoreLoc(name, pref, city) {
+function setStoreLoc(name, pref, city, town) {
   const m = loadStoreLocs();
-  m[name] = { pref: pref || '', city: city || '' };
+  m[name] = { pref: pref || '', city: city || '', town: town || '' };
   saveStoreLocs(m);
 }
 function isLocCat(cat) { return LOC_CATS.includes(cat || formCat); }
@@ -2038,9 +2039,9 @@ function renderStores() {
         })()
       + (LOC_CATS.includes(s.category) ? (function() {
           const loc = getStoreLoc(s.storeName);
-          if (loc && (loc.pref || loc.city)) {
+          if (loc && (loc.pref || loc.city || loc.town)) {
             return '<div class="store-loc-row">'
-              + '<span class="store-loc-link">📍 ' + esc((loc.pref || '') + (loc.city || '')) + '</span>'
+              + '<span class="store-loc-link">📍 ' + esc((loc.pref || '') + (loc.city || '') + (loc.town || '')) + '</span>'
               + '<button class="store-loc-del" onclick="deleteStoreLoc(\'' + esc(s.storeName).replace(/'/g, "\\'") + '\',event)">✕</button>'
               + '</div>';
           }
@@ -2061,6 +2062,7 @@ function registerStoreLoc(name, ev) {
   const existLoc = getStoreLoc(name) || {};
   document.getElementById('store-loc-pref').value = existLoc.pref || '';
   document.getElementById('store-loc-city').value = existLoc.city || '';
+  document.getElementById('store-loc-town').value = existLoc.town || '';
   document.getElementById('store-loc-modal').classList.add('open');
 }
 function closeStoreLocModal() {
@@ -2072,7 +2074,8 @@ function bgCloseStoreLoc(e) {
 function saveStoreLocManual() {
   var pref = (document.getElementById('store-loc-pref').value || '').trim();
   var city = (document.getElementById('store-loc-city').value || '').trim();
-  setStoreLoc(storeLocTarget, pref, city);
+  var town = (document.getElementById('store-loc-town').value || '').trim();
+  setStoreLoc(storeLocTarget, pref, city, town);
   closeStoreLocModal();
   renderStores();
 }
