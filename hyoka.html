@@ -857,7 +857,7 @@
     <button class="sort-btn" data-sort="cospa" onclick="setSort(this,'cospa')">💎 満足度</button>
     <button class="sort-btn active" data-sort="date" onclick="setSort(this,'date')">日付</button>
     <button class="sort-btn" data-sort="amount" onclick="setSort(this,'amount')">金額</button>
-    <button class="sort-btn" data-sort="compatibility" onclick="setSort(this,'compatibility')">相性</button>
+    <button class="sort-btn" data-sort="compatibility" onclick="setSort(this,'compatibility')">また会いたい度</button>
     <button class="sort-btn" data-sort="understanding" onclick="setSort(this,'understanding')">理解感</button>
     <button class="sort-btn" data-sort="initiative" onclick="setSort(this,'initiative')">リード力</button>
     <button class="sort-btn" data-sort="security" onclick="setSort(this,'security')">安心感</button>
@@ -870,7 +870,7 @@
     <span class="sort-label">ソート：</span>
     <button class="sort-btn active" data-csort="lastDate" onclick="setCastSort(this,'lastDate')">最終指名日</button>
     <button class="sort-btn" data-csort="count" onclick="setCastSort(this,'count')">回数</button>
-    <button class="sort-btn" data-csort="compatibility" onclick="setCastSort(this,'compatibility')">相性</button>
+    <button class="sort-btn" data-csort="compatibility" onclick="setCastSort(this,'compatibility')">また会いたい度</button>
     <button class="sort-btn" data-csort="understanding" onclick="setCastSort(this,'understanding')">理解感</button>
     <button class="sort-btn" data-csort="initiative" onclick="setCastSort(this,'initiative')">リード力</button>
     <button class="sort-btn" data-csort="security" onclick="setCastSort(this,'security')">安心感</button>
@@ -996,7 +996,7 @@
       <div class="rating-hint" id="hint-appearance">好みか</div>
       <div class="section-label" style="margin-top:14px">総合評価</div>
       <div class="rating-row">
-        <span class="rating-label">相性</span>
+        <span class="rating-label">また会いたい度</span>
         <input type="range" min="0" max="100" value="50" id="r-compatibility" oninput="syncRating('compatibility',this)">
         <span class="rating-value" id="rv-compatibility">50</span>
       </div>
@@ -1591,7 +1591,7 @@ function renderCasts() {
       + '<div class="cast-stat">総額：<span>' + c.totalAmount.toLocaleString() + '円</span></div>'
       + '</div>'
       + '<div class="cast-ratings">'
-      + '<div class="cast-rating-item">相性 <span>' + c.avgCompatibility + '</span></div>'
+      + '<div class="cast-rating-item">また会いたい度 <span>' + c.avgCompatibility + '</span></div>'
       + '<div class="cast-rating-item">理解感 <span>' + c.avgUnderstanding + '</span></div>'
       + '<div class="cast-rating-item">リード力 <span>' + c.avgInitiative + '</span></div>'
       + '<div class="cast-rating-item">安心感 <span>' + c.avgSecurity + '</span></div>'
@@ -2582,7 +2582,7 @@ function openCastDetail(castKey) {
 
   // 評価スライダーセクション
   var rKeys = ['understanding','initiative','security','atmosphere','appearance','compatibility'];
-  var rLabels = ['理解感','リード力','安心感','愛嬌・親しみやすさ','容姿','相性'];
+  var rLabels = ['理解感','リード力','安心感','愛嬌・親しみやすさ','容姿','また会いたい度'];
   html += '<div style="padding:14px 0 16px;border-bottom:2px solid var(--border)">';
   html += '<div onclick="toggleCastRating()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:var(--text2);margin-bottom:0;letter-spacing:.05em">';
   html += '評価 <span id="cast-rating-chevron" style="font-size:.75rem">▶</span></div>';
