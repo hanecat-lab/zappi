@@ -1189,7 +1189,8 @@ function getCastRating(castKey) {
     compatibility: r.compatibility != null ? r.compatibility : 50,
     favorite:     r.favorite     || false,
     diaryUrl:     r.diaryUrl     || '',
-    memo:         r.memo         || ''
+    memo:            r.memo            || '',
+    ratingUpdatedAt: r.ratingUpdatedAt || ''
   };
 }
 function setCastRating(castKey, ratings) {
