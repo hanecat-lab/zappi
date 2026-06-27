@@ -313,10 +313,11 @@ function App() {
   const totalOut      = fixedTotal + varTotal + nhkVal + occTotal + cashExpTotal;
   const income        = Number(current.income) || 0;
   const balance       = income - totalOut;
-  // 仮出費: カテゴリ紐付きは実績を自動集計。控除額 = max(0, 予算 - 実績) で2重控除を回避
+  // 仮出費: カテゴリ紐付きは実績を自動集計（現金・CR両方）。控除額 = max(0, 予算 - 実績)。
+  // 現金・CRどちらの出費も予算枠の実績として差し引く（CR出費分も予約額を減らす）。
   const provReserve   = provisionals.reduce((s, p) => {
     const actual = p.catId
-      ? expenses.filter(e => e.catId === p.catId && e.type === "cash").reduce((a,e) => a + (Number(e.amount)||0), 0)
+      ? expenses.filter(e => e.catId === p.catId).reduce((a,e) => a + (Number(e.amount)||0), 0)
       : (Number(p.spent)||0);
     return s + Math.max(0, (Number(p.budget)||0) - actual);
   }, 0);
@@ -1125,7 +1126,7 @@ function App() {
               <div style={{ display:"flex", flexDirection:"column", gap:4, marginBottom:8 }}>
                 {provisionals.map(p => {
                   const actual = p.catId
-                    ? expenses.filter(e => e.catId === p.catId && e.type==="cash").reduce((a,e)=>a+(Number(e.amount)||0),0)
+                    ? expenses.filter(e => e.catId === p.catId).reduce((a,e)=>a+(Number(e.amount)||0),0)
                     : (Number(p.spent)||0);
                   const budget = Number(p.budget)||0;
                   const pct = budget > 0 ? Math.min(actual/budget, 1) : 0;
