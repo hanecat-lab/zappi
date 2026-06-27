@@ -1,1 +1,1896 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>家計簿・燃費管理</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+    .app-container {
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: #fff;
+      position: relative;
+      padding-bottom: 80px;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 16px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .header-subtitle {
+      font-size: 12px;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+    .tab-bar {
+      display: flex;
+      background: rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 3px;
+      margin-top: 12px;
+      gap: 2px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 7px 4px;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.75);
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.3px;
+    }
+    .tab-btn.active {
+      background: white;
+      color: #667eea;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .content {
+      padding: 16px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid #f0f0f0;
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .summary-item {
+      background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+    .summary-item.full-width {
+      grid-column: 1 / -1;
+    }
+    .summary-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #667eea;
+    }
+    .summary-value.red { color: #e74c3c; }
+    .summary-value.green { color: #27ae60; }
+    .summary-value.orange { color: #f39c12; }
+    .summary-label {
+      font-size: 11px;
+      color: #888;
+      margin-top: 3px;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 5px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+      background: #fafafa;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: #667eea;
+      background: white;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.3px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-danger {
+      background: #fff5f5;
+      color: #e74c3c;
+      border: 1.5px solid #ffd5d5;
+      padding: 7px;
+      font-size: 12px;
+      border-radius: 8px;
+      width: auto;
+    }
+    .btn-small {
+      padding: 6px 10px;
+      font-size: 11px;
+      border-radius: 8px;
+      width: auto;
+    }
+    .btn-secondary {
+      background: #f0f2ff;
+      color: #667eea;
+    }
+    .list-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #f5f5f5;
+      gap: 10px;
+    }
+    .list-item:last-child { border-bottom: none; }
+    .item-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .item-info { flex: 1; min-width: 0; }
+    .item-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1a1a2e;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .item-subtitle {
+      font-size: 11px;
+      color: #999;
+      margin-top: 2px;
+    }
+    .item-amount {
+      font-size: 15px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .amount-expense { color: #e74c3c; }
+    .amount-income { color: #27ae60; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .badge-purple { background: #f0f2ff; color: #667eea; }
+    .badge-green { background: #f0fff4; color: #27ae60; }
+    .badge-red { background: #fff5f5; color: #e74c3c; }
+    .badge-orange { background: #fff8f0; color: #f39c12; }
+    .badge-blue { background: #f0f8ff; color: #3498db; }
+    .progress-bar {
+      height: 8px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    .chart-container {
+      position: relative;
+      height: 200px;
+      margin-top: 8px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 30px 16px;
+      color: #aaa;
+    }
+    .empty-state .emoji { font-size: 40px; margin-bottom: 10px; }
+    .empty-state p { font-size: 14px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .fuel-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .fuel-stat-item {
+      background: linear-gradient(135deg, #fff8f0 0%, #fff3e0 100%);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+    .fuel-stat-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #f39c12;
+    }
+    .fuel-stat-label {
+      font-size: 10px;
+      color: #888;
+      margin-top: 2px;
+    }
+    .drive-item {
+      background: linear-gradient(135deg, #f8f9ff 0%, #f0f8ff 100%);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    .drive-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+    .drive-route {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+    .drive-details {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .drive-detail {
+      font-size: 11px;
+      color: #666;
+    }
+    .toggle-section {
+      background: #f8f9ff;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .toggle-header {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .toggle-content {
+      padding: 0 16px 16px;
+    }
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-sheet {
+      background: white;
+      width: 100%;
+      max-width: 430px;
+      border-radius: 20px 20px 0 0;
+      padding: 20px 16px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-handle {
+      width: 36px;
+      height: 4px;
+      background: #e0e0e0;
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    select.form-input {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+    .cat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .cat-btn {
+      padding: 8px 4px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      background: white;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .cat-btn.selected {
+      border-color: #667eea;
+      background: #f0f2ff;
+    }
+    .cat-btn .cat-emoji { font-size: 20px; }
+    .cat-btn .cat-label { font-size: 9px; color: #666; margin-top: 3px; }
+    .notification {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a2e;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      z-index: 300;
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 430px;
+      background: white;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      padding: 8px 0;
+      z-index: 100;
+    }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: #bbb;
+      font-size: 10px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .nav-item.active { color: #667eea; }
+    .nav-icon { font-size: 22px; margin-bottom: 2px; }
+    .temp-expense-item {
+      background: #fffbf0;
+      border: 1.5px dashed #f39c12;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    .temp-expense-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .temp-expense-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+    .temp-expense-amount {
+      font-size: 14px;
+      font-weight: 700;
+      color: #f39c12;
+    }
+    .temp-expense-date {
+      font-size: 11px;
+      color: #999;
+      margin-top: 3px;
+    }
+    .confirm-btn {
+      background: linear-gradient(135deg, #27ae60, #2ecc71);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .delete-btn {
+      background: #fff5f5;
+      color: #e74c3c;
+      border: 1px solid #ffd5d5;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ==================== CONSTANTS ====================
+const CATEGORIES = [
+  { id: 'food', label: '食費', emoji: '🍽️', color: '#e74c3c' },
+  { id: 'transport', label: '交通', emoji: '🚃', color: '#3498db' },
+  { id: 'shopping', label: '買物', emoji: '🛍️', color: '#9b59b6' },
+  { id: 'entertainment', label: '娯楽', emoji: '🎮', color: '#f39c12' },
+  { id: 'health', label: '医療', emoji: '💊', color: '#e91e63' },
+  { id: 'utilities', label: '光熱費', emoji: '💡', color: '#ff9800' },
+  { id: 'housing', label: '住居', emoji: '🏠', color: '#795548' },
+  { id: 'education', label: '教育', emoji: '📚', color: '#009688' },
+  { id: 'beauty', label: '美容', emoji: '💄', color: '#ff4081' },
+  { id: 'pets', label: 'ペット', emoji: '🐾', color: '#8bc34a' },
+  { id: 'fuel', label: '燃料', emoji: '⛽', color: '#ff5722' },
+  { id: 'other', label: 'その他', emoji: '📦', color: '#607d8b' },
+];
+
+const INCOME_CATEGORIES = [
+  { id: 'salary', label: '給与', emoji: '💰' },
+  { id: 'bonus', label: 'ボーナス', emoji: '🎁' },
+  { id: 'freelance', label: '副業', emoji: '💼' },
+  { id: 'investment', label: '投資', emoji: '📈' },
+  { id: 'other_income', label: 'その他', emoji: '💵' },
+];
+
+const PURPOSES = ['通勤', '買い物', '観光', 'ドライブ', '仕事', 'その他'];
+
+// ==================== STORAGE ====================
+const STORAGE_KEYS = {
+  expenses: 'kakeibo_expenses_v3',
+  income: 'kakeibo_income_v3',
+  budget: 'kakeibo_budget_v3',
+  fuelLogs: 'kakeibo_fuel_v3',
+  driveLogs: 'kakeibo_drives_v3',
+  settings: 'kakeibo_settings_v3',
+  tempExpenses: 'kakeibo_temp_expenses_v1',
+};
+
+function loadData(key, defaultVal) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : defaultVal;
+  } catch { return defaultVal; }
+}
+
+function saveData(key, data) {
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) { console.error(e); }
+}
+
+// ==================== UTILS ====================
+function formatCurrency(amount) {
+  return '¥' + Math.abs(amount).toLocaleString('ja-JP');
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return `${d.getMonth()+1}/${d.getDate()}`;
+}
+
+function getToday() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getCurrentMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+}
+
+function getCategoryInfo(catId) {
+  return CATEGORIES.find(c => c.id === catId) || CATEGORIES[CATEGORIES.length-1];
+}
+
+// ==================== CHART COMPONENT ====================
+function DonutChart({ data, colors, labels }) {
+  const canvasRef = useRef(null);
+  const chartRef = useRef(null);
+
+  useEffect(() => {
+    if (!canvasRef.current || !data || data.length === 0) return;
+    if (chartRef.current) chartRef.current.destroy();
+
+    const ctx = canvasRef.current.getContext('2d');
+    chartRef.current = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: colors,
+          borderWidth: 2,
+          borderColor: '#fff',
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: { font: { size: 10 }, boxWidth: 12, padding: 6 }
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `¥${ctx.raw.toLocaleString()}`
+            }
+          }
+        },
+        cutout: '60%',
+      }
+    });
+
+    return () => { if (chartRef.current) chartRef.current.destroy(); };
+  }, [data, colors, labels]);
+
+  if (!data || data.length === 0) return null;
+  return <canvas ref={canvasRef} />;
+}
+
+function LineChart({ labels, datasets }) {
+  const canvasRef = useRef(null);
+  const chartRef = useRef(null);
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    if (chartRef.current) chartRef.current.destroy();
+
+    const ctx = canvasRef.current.getContext('2d');
+    chartRef.current = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 12 } } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { font: { size: 10 }, callback: v => '¥' + v.toLocaleString() }
+          },
+          x: { ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+
+    return () => { if (chartRef.current) chartRef.current.destroy(); };
+  }, [labels, datasets]);
+
+  return <canvas ref={canvasRef} />;
+}
+
+// ==================== NOTIFICATION ====================
+function Notification({ message, onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 2500);
+    return () => clearTimeout(t);
+  }, []);
+  return <div className="notification">{message}</div>;
+}
+
+// ==================== HOME TAB ====================
+function HomeTab({ expenses, income, budget, tempExpenses, onConfirmTemp, onDeleteTemp, currentMonth, onNavigate }) {
+  const monthExpenses = expenses.filter(e => e.date.startsWith(currentMonth));
+  const monthIncome = income.filter(i => i.date.startsWith(currentMonth));
+  const totalExpense = monthExpenses.reduce((s, e) => s + e.amount, 0);
+  const totalIncome = monthIncome.reduce((s, i) => s + i.amount, 0);
+  const balance = totalIncome - totalExpense;
+  const budgetAmt = budget[currentMonth] || 0;
+  const budgetUsed = budgetAmt > 0 ? Math.min((totalExpense / budgetAmt) * 100, 100) : 0;
+
+  // 今日の支出
+  const today = getToday();
+  const todayExpenses = expenses.filter(e => e.date === today);
+  const todayTotal = todayExpenses.reduce((s, e) => s + e.amount, 0);
+
+  // カテゴリ別集計
+  const catMap = {};
+  monthExpenses.forEach(e => {
+    catMap[e.category] = (catMap[e.category] || 0) + e.amount;
+  });
+  const catData = Object.entries(catMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
+
+  // 仮支出の合計
+  const tempTotal = tempExpenses.reduce((s, t) => s + t.amount, 0);
+
+  return (
+    <div className="content">
+      {/* 月間サマリー */}
+      <div className="card">
+        <div className="card-title">📊 {currentMonth.replace('-', '年')}月</div>
+        <div className="summary-grid">
+          <div className="summary-item">
+            <div className="summary-value red">{formatCurrency(totalExpense)}</div>
+            <div className="summary-label">支出</div>
+          </div>
+          <div className="summary-item">
+            <div className="summary-value green">{formatCurrency(totalIncome)}</div>
+            <div className="summary-label">収入</div>
+          </div>
+          <div className="summary-item full-width">
+            <div className={`summary-value ${balance >= 0 ? 'green' : 'red'}`}>
+              {balance >= 0 ? '+' : '-'}{formatCurrency(balance)}
+            </div>
+            <div className="summary-label">収支バランス</div>
+          </div>
+        </div>
+
+        {budgetAmt > 0 && (
+          <div style={{marginTop: 12}}>
+            <div style={{display:'flex', justifyContent:'space-between', fontSize:12, color:'#666', marginBottom:4}}>
+              <span>予算使用率</span>
+              <span>{formatCurrency(totalExpense)} / {formatCurrency(budgetAmt)}</span>
+            </div>
+            <div className="progress-bar">
+              <div className="progress-fill" style={{
+                width: `${budgetUsed}%`,
+                background: budgetUsed > 90 ? '#e74c3c' : budgetUsed > 70 ? '#f39c12' : '#667eea'
+              }} />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 今日の支出 */}
+      <div className="card">
+        <div className="section-header">
+          <div className="card-title">📅 今日の支出</div>
+          <span className="summary-value red" style={{fontSize:16}}>{formatCurrency(todayTotal)}</span>
+        </div>
+        {todayExpenses.length === 0 ? (
+          <div style={{color:'#ccc', fontSize:13, textAlign:'center', padding:'8px 0'}}>
+            今日の記録はありません
+          </div>
+        ) : (
+          todayExpenses.slice(0, 5).map(e => {
+            const cat = getCategoryInfo(e.category);
+            return (
+              <div key={e.id} className="list-item">
+                <div className="item-icon" style={{background: cat.color + '20'}}>
+                  {cat.emoji}
+                </div>
+                <div className="item-info">
+                  <div className="item-title">{e.memo || cat.label}</div>
+                  <div className="item-subtitle">{cat.label}</div>
+                </div>
+                <div className="item-amount amount-expense">{formatCurrency(e.amount)}</div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* 仮支出 */}
+      {tempExpenses.length > 0 && (
+        <div className="card">
+          <div className="section-header">
+            <div className="card-title">⏳ 仮支出（未確定）</div>
+            <span style={{fontSize:14, fontWeight:700, color:'#f39c12'}}>{formatCurrency(tempTotal)}</span>
+          </div>
+          {tempExpenses.map(t => (
+            <div key={t.id} className="temp-expense-item">
+              <div className="temp-expense-header">
+                <div>
+                  <div className="temp-expense-title">{t.memo || getCategoryInfo(t.category).label}</div>
+                  <div className="temp-expense-date">{formatDate(t.date)} · {getCategoryInfo(t.category).emoji} {getCategoryInfo(t.category).label}</div>
+                </div>
+                <div style={{display:'flex', alignItems:'center', gap:6}}>
+                  <div className="temp-expense-amount">{formatCurrency(t.amount)}</div>
+                </div>
+              </div>
+              <div style={{marginTop:8, display:'flex', gap:6}}>
+                <button className="confirm-btn" onClick={() => onConfirmTemp(t.id)}>✓ 確定</button>
+                <button className="delete-btn" onClick={() => onDeleteTemp(t.id)}>✕ 削除</button>
+              </div>
+            </div>
+          ))}
+          <div style={{fontSize:11, color:'#999', marginTop:8, textAlign:'center'}}>
+            仮支出は確定するまで月計に含まれません
+          </div>
+        </div>
+      )}
+
+      {/* カテゴリ別 */}
+      {catData.length > 0 && (
+        <div className="card">
+          <div className="card-title">📈 カテゴリ別支出</div>
+          <div className="chart-container">
+            <DonutChart
+              data={catData.map(([,v]) => v)}
+              colors={catData.map(([k]) => getCategoryInfo(k).color)}
+              labels={catData.map(([k]) => getCategoryInfo(k).label)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* クイックアクション */}
+      <div className="card">
+        <div className="card-title">⚡ クイックアクション</div>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8}}>
+          <button className="btn btn-primary btn-small" onClick={() => onNavigate('expense')}>
+            + 支出を追加
+          </button>
+          <button className="btn btn-secondary btn-small" onClick={() => onNavigate('income')}>
+            + 収入を追加
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==================== EXPENSE TAB ====================
+function ExpenseTab({ expenses, onAdd, onDelete, tempExpenses, onAddTemp }) {
+  const [showForm, setShowForm] = useState(false);
+  const [showTempForm, setShowTempForm] = useState(false);
+  const [selectedCat, setSelectedCat] = useState('food');
+  const [amount, setAmount] = useState('');
+  const [memo, setMemo] = useState('');
+  const [date, setDate] = useState(getToday());
+  const [filterMonth, setFilterMonth] = useState(getCurrentMonth());
+
+  // 仮支出フォーム用
+  const [tempCat, setTempCat] = useState('food');
+  const [tempAmount, setTempAmount] = useState('');
+  const [tempMemo, setTempMemo] = useState('');
+  const [tempDate, setTempDate] = useState(getToday());
+
+  const filtered = expenses
+    .filter(e => e.date.startsWith(filterMonth))
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const handleAdd = () => {
+    const amt = parseInt(amount);
+    if (!amt || amt <= 0) return;
+    onAdd({ id: Date.now(), category: selectedCat, amount: amt, memo, date });
+    setAmount(''); setMemo(''); setDate(getToday());
+    setShowForm(false);
+  };
+
+  const handleAddTemp = () => {
+    const amt = parseInt(tempAmount);
+    if (!amt || amt <= 0) return;
+    onAddTemp({ id: Date.now(), category: tempCat, amount: amt, memo: tempMemo, date: tempDate });
+    setTempAmount(''); setTempMemo(''); setTempDate(getToday());
+    setShowTempForm(false);
+  };
+
+  const monthTotal = filtered.reduce((s, e) => s + e.amount, 0);
+
+  return (
+    <div className="content">
+      <div className="card">
+        <div className="section-header">
+          <div className="card-title">💸 支出管理</div>
+          <div style={{display:'flex', gap:6}}>
+            <button className="btn btn-secondary btn-small" onClick={() => setShowTempForm(true)}>仮追加</button>
+            <button className="btn btn-primary btn-small" onClick={() => setShowForm(true)}>+ 追加</button>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <input
+            type="month"
+            className="form-input"
+            value={filterMonth}
+            onChange={e => setFilterMonth(e.target.value)}
+          />
+        </div>
+
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+          <span style={{fontSize:12, color:'#666'}}>{filtered.length}件</span>
+          <span style={{fontSize:16, fontWeight:700, color:'#e74c3c'}}>{formatCurrency(monthTotal)}</span>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="empty-state">
+            <div className="emoji">💸</div>
+            <p>この月の支出はありません</p>
+          </div>
+        ) : (
+          filtered.map(e => {
+            const cat = getCategoryInfo(e.category);
+            return (
+              <div key={e.id} className="list-item">
+                <div className="item-icon" style={{background: cat.color + '20'}}>
+                  {cat.emoji}
+                </div>
+                <div className="item-info">
+                  <div className="item-title">{e.memo || cat.label}</div>
+                  <div className="item-subtitle">{formatDate(e.date)} · {cat.label}</div>
+                </div>
+                <div style={{display:'flex', alignItems:'center', gap:8}}>
+                  <div className="item-amount amount-expense">{formatCurrency(e.amount)}</div>
+                  <button className="btn-danger btn" onClick={() => onDelete(e.id)}>✕</button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* 支出追加モーダル */}
+      {showForm && (
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+            <div className="modal-handle" />
+            <div className="modal-title">支出を追加</div>
+
+            <div className="form-group">
+              <label className="form-label">カテゴリ</label>
+              <div className="cat-grid">
+                {CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    className={`cat-btn ${selectedCat === cat.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedCat(cat.id)}
+                  >
+                    <div className="cat-emoji">{cat.emoji}</div>
+                    <div className="cat-label">{cat.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">金額 (円)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  placeholder="0"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  inputMode="numeric"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">日付</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">メモ (任意)</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="何に使いましたか？"
+                value={memo}
+                onChange={e => setMemo(e.target.value)}
+              />
+            </div>
+
+            <button className="btn btn-primary" onClick={handleAdd}>追加する</button>
+          </div>
+        </div>
+      )}
+
+      {/* 仮支出追加モーダル */}
+      {showTempForm && (
+        <div className="modal-overlay" onClick={() => setShowTempForm(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+            <div className="modal-handle" />
+            <div className="modal-title">⏳ 仮支出を追加</div>
+            <div style={{fontSize:12, color:'#f39c12', textAlign:'center', marginBottom:16, background:'#fffbf0', padding:'8px', borderRadius:8}}>
+              仮支出は確定するまで月計に含まれません
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">カテゴリ</label>
+              <div className="cat-grid">
+                {CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    className={`cat-btn ${tempCat === cat.id ? 'selected' : ''}`}
+                    onClick={() => setTempCat(cat.id)}
+                  >
+                    <div className="cat-emoji">{cat.emoji}</div>
+                    <div className="cat-label">{cat.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">金額 (円)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  placeholder="0"
+                  value={tempAmount}
+                  onChange={e => setTempAmount(e.target.value)}
+                  inputMode="numeric"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">日付</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={tempDate}
+                  onChange={e => setTempDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">メモ (任意)</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="何に使う予定ですか？"
+                value={tempMemo}
+                onChange={e => setTempMemo(e.target.value)}
+              />
+            </div>
+
+            <button className="btn btn-primary" style={{background:'linear-gradient(135deg,#f39c12,#e67e22)'}} onClick={handleAddTemp}>仮追加する</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==================== INCOME TAB ====================
+function IncomeTab({ income, onAdd, onDelete }) {
+  const [showForm, setShowForm] = useState(false);
+  const [selectedCat, setSelectedCat] = useState('salary');
+  const [amount, setAmount] = useState('');
+  const [memo, setMemo] = useState('');
+  const [date, setDate] = useState(getToday());
+  const [filterMonth, setFilterMonth] = useState(getCurrentMonth());
+
+  const filtered = income
+    .filter(i => i.date.startsWith(filterMonth))
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const monthTotal = filtered.reduce((s, i) => s + i.amount, 0);
+
+  const handleAdd = () => {
+    const amt = parseInt(amount);
+    if (!amt || amt <= 0) return;
+    onAdd({ id: Date.now(), category: selectedCat, amount: amt, memo, date });
+    setAmount(''); setMemo(''); setDate(getToday());
+    setShowForm(false);
+  };
+
+  return (
+    <div className="content">
+      <div className="card">
+        <div className="section-header">
+          <div className="card-title">💰 収入管理</div>
+          <button className="btn btn-primary btn-small" onClick={() => setShowForm(true)}>+ 追加</button>
+        </div>
+
+        <div className="form-group">
+          <input
+            type="month"
+            className="form-input"
+            value={filterMonth}
+            onChange={e => setFilterMonth(e.target.value)}
+          />
+        </div>
+
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+          <span style={{fontSize:12, color:'#666'}}>{filtered.length}件</span>
+          <span style={{fontSize:16, fontWeight:700, color:'#27ae60'}}>{formatCurrency(monthTotal)}</span>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="empty-state">
+            <div className="emoji">💰</div>
+            <p>この月の収入はありません</p>
+          </div>
+        ) : (
+          filtered.map(i => {
+            const cat = INCOME_CATEGORIES.find(c => c.id === i.category) || INCOME_CATEGORIES[0];
+            return (
+              <div key={i.id} className="list-item">
+                <div className="item-icon" style={{background: '#f0fff4'}}>
+                  {cat.emoji}
+                </div>
+                <div className="item-info">
+                  <div className="item-title">{i.memo || cat.label}</div>
+                  <div className="item-subtitle">{formatDate(i.date)} · {cat.label}</div>
+                </div>
+                <div style={{display:'flex', alignItems:'center', gap:8}}>
+                  <div className="item-amount amount-income">{formatCurrency(i.amount)}</div>
+                  <button className="btn-danger btn" onClick={() => onDelete(i.id)}>✕</button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {showForm && (
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+            <div className="modal-handle" />
+            <div className="modal-title">収入を追加</div>
+
+            <div className="form-group">
+              <label className="form-label">カテゴリ</label>
+              <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:12}}>
+                {INCOME_CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    className={`cat-btn ${selectedCat === cat.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedCat(cat.id)}
+                  >
+                    <div className="cat-emoji">{cat.emoji}</div>
+                    <div className="cat-label">{cat.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">金額 (円)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  placeholder="0"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  inputMode="numeric"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">日付</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">メモ (任意)</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="収入の詳細"
+                value={memo}
+                onChange={e => setMemo(e.target.value)}
+              />
+            </div>
+
+            <button className="btn btn-primary" onClick={handleAdd}>追加する</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==================== FUEL TAB ====================
+function FuelTab({ fuelLogs, driveLogs, onAddFuel, onDeleteFuel, onAddDrive, onDeleteDrive }) {
+  const [activeSection, setActiveSection] = useState('fuel');
+  const [showFuelForm, setShowFuelForm] = useState(false);
+  const [showDriveForm, setShowDriveForm] = useState(false);
+
+  // Fuel form
+  const [fuelDate, setFuelDate] = useState(getToday());
+  const [liters, setLiters] = useState('');
+  const [pricePerL, setPricePerL] = useState('');
+  const [odometer, setOdometer] = useState('');
+  const [fuelMemo, setFuelMemo] = useState('');
+
+  // Drive form
+  const [driveDate, setDriveDate] = useState(getToday());
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [distance, setDistance] = useState('');
+  const [purpose, setPurpose] = useState('通勤');
+  const [driveMemo, setDriveMemo] = useState('');
+
+  // 燃費計算
+  const sortedLogs = [...fuelLogs].sort((a, b) => a.date.localeCompare(b.date));
+  let totalFuelCost = 0;
+  let totalLiters = 0;
+  let fuelEfficiencies = [];
+
+  sortedLogs.forEach((log, idx) => {
+    totalFuelCost += log.liters * log.pricePerL;
+    totalLiters += log.liters;
+    if (idx > 0 && log.odometer && sortedLogs[idx-1].odometer) {
+      const dist = log.odometer - sortedLogs[idx-1].odometer;
+      if (dist > 0) {
+        fuelEfficiencies.push(dist / log.liters);
+      }
+    }
+  });
+
+  const avgFuelEff = fuelEfficiencies.length > 0
+    ? fuelEfficiencies.reduce((s, v) => s + v, 0) / fuelEfficiencies.length
+    : 0;
+
+  const totalDriveDistance = driveLogs.reduce((s, d) => s + (parseFloat(d.distance) || 0), 0);
+
+  const handleAddFuel = () => {
+    const l = parseFloat(liters);
+    const p = parseFloat(pricePerL);
+    if (!l || !p) return;
+    onAddFuel({
+      id: Date.now(),
+      date: fuelDate,
+      liters: l,
+      pricePerL: p,
+      odometer: parseFloat(odometer) || 0,
+      memo: fuelMemo,
+    });
+    setLiters(''); setPricePerL(''); setOdometer(''); setFuelMemo('');
+    setShowFuelForm(false);
+  };
+
+  const handleAddDrive = () => {
+    if (!from || !to) return;
+    onAddDrive({
+      id: Date.now(),
+      date: driveDate,
+      from, to,
+      distance: parseFloat(distance) || 0,
+      purpose,
+      memo: driveMemo,
+    });
+    setFrom(''); setTo(''); setDistance(''); setDriveMemo('');
+    setShowDriveForm(false);
+  };
+
+  return (
+    <div className="content">
+      {/* セクション切替 */}
+      <div style={{display:'flex', gap:8, marginBottom:12}}>
+        <button
+          className={`btn btn-small ${activeSection === 'fuel' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{flex:1}}
+          onClick={() => setActiveSection('fuel')}
+        >⛽ 給油記録</button>
+        <button
+          className={`btn btn-small ${activeSection === 'drive' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{flex:1}}
+          onClick={() => setActiveSection('drive')}
+        >🚗 ドライブ記録</button>
+      </div>
+
+      {activeSection === 'fuel' && (
+        <>
+          {/* 燃費サマリー */}
+          <div className="card">
+            <div className="section-header">
+              <div className="card-title">⛽ 給油サマリー</div>
+              <button className="btn btn-primary btn-small" onClick={() => setShowFuelForm(true)}>+ 給油</button>
+            </div>
+            <div className="fuel-stats">
+              <div className="fuel-stat-item">
+                <div className="fuel-stat-value">{avgFuelEff > 0 ? avgFuelEff.toFixed(1) : '--'}</div>
+                <div className="fuel-stat-label">燃費 km/L</div>
+              </div>
+              <div className="fuel-stat-item">
+                <div className="fuel-stat-value">{totalLiters.toFixed(1)}</div>
+                <div className="fuel-stat-label">総給油量 L</div>
+              </div>
+              <div className="fuel-stat-item">
+                <div className="fuel-stat-value">{formatCurrency(totalFuelCost)}</div>
+                <div className="fuel-stat-label">燃料費合計</div>
+              </div>
+            </div>
+          </div>
+
+          {/* 給油履歴 */}
+          <div className="card">
+            <div className="card-title">📋 給油履歴</div>
+            {fuelLogs.length === 0 ? (
+              <div className="empty-state">
+                <div className="emoji">⛽</div>
+                <p>給油記録がありません</p>
+              </div>
+            ) : (
+              [...fuelLogs].sort((a,b) => b.date.localeCompare(a.date)).map(log => (
+                <div key={log.id} className="list-item">
+                  <div className="item-icon" style={{background:'#fff3e0'}}>⛽</div>
+                  <div className="item-info">
+                    <div className="item-title">{log.liters}L · {formatCurrency(log.liters * log.pricePerL)}</div>
+                    <div className="item-subtitle">
+                      {formatDate(log.date)} · {log.pricePerL}円/L
+                      {log.odometer ? ` · ${log.odometer.toLocaleString()}km` : ''}
+                    </div>
+                  </div>
+                  <button className="btn-danger btn" onClick={() => onDeleteFuel(log.id)}>✕</button>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+
+      {activeSection === 'drive' && (
+        <>
+          {/* ドライブサマリー */}
+          <div className="card">
+            <div className="section-header">
+              <div className="card-title">🚗 ドライブサマリー</div>
+              <button className="btn btn-primary btn-small" onClick={() => setShowDriveForm(true)}>+ 記録</button>
+            </div>
+            <div className="summary-grid">
+              <div className="summary-item">
+                <div className="summary-value orange">{driveLogs.length}</div>
+                <div className="summary-label">総ドライブ数</div>
+              </div>
+              <div className="summary-item">
+                <div className="summary-value orange">{totalDriveDistance.toFixed(0)}km</div>
+                <div className="summary-label">総走行距離</div>
+              </div>
+            </div>
+          </div>
+
+          {/* ドライブ履歴 */}
+          <div className="card">
+            <div className="card-title">📋 ドライブ履歴</div>
+            {driveLogs.length === 0 ? (
+              <div className="empty-state">
+                <div className="emoji">🚗</div>
+                <p>ドライブ記録がありません</p>
+              </div>
+            ) : (
+              [...driveLogs].sort((a,b) => b.date.localeCompare(a.date)).map(log => (
+                <div key={log.id} className="drive-item">
+                  <div className="drive-header">
+                    <div>
+                      <div className="drive-route">{log.from} → {log.to}</div>
+                      <div className="drive-details">
+                        <span className="drive-detail">📅 {formatDate(log.date)}</span>
+                        {log.distance > 0 && <span className="drive-detail">📏 {log.distance}km</span>}
+                        <span className="drive-detail">🎯 {log.purpose}</span>
+                      </div>
+                      {log.memo && <div style={{fontSize:11, color:'#999', marginTop:3}}>{log.memo}</div>}
+                    </div>
+                    <button className="btn-danger btn" onClick={() => onDeleteDrive(log.id)}>✕</button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+
+      {/* 給油フォームモーダル */}
+      {showFuelForm && (
+        <div className="modal-overlay" onClick={() => setShowFuelForm(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+            <div className="modal-handle" />
+            <div className="modal-title">⛽ 給油を記録</div>
+
+            <div className="form-group">
+              <label className="form-label">日付</label>
+              <input type="date" className="form-input" value={fuelDate} onChange={e => setFuelDate(e.target.value)} />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">給油量 (L)</label>
+                <input type="number" className="form-input" placeholder="30.5" value={liters} onChange={e => setLiters(e.target.value)} inputMode="decimal" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">単価 (円/L)</label>
+                <input type="number" className="form-input" placeholder="165" value={pricePerL} onChange={e => setPricePerL(e.target.value)} inputMode="numeric" />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">オドメーター (km) ※燃費計算用</label>
+              <input type="number" className="form-input" placeholder="12345" value={odometer} onChange={e => setOdometer(e.target.value)} inputMode="numeric" />
+            </div>
+
+            {liters && pricePerL && (
+              <div style={{background:'#f0fff4', border:'1px solid #c3f0ca', borderRadius:10, padding:10, marginBottom:12, fontSize:13}}>
+                💰 給油費用: <strong>{formatCurrency(parseFloat(liters) * parseFloat(pricePerL))}</strong>
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label">メモ (任意)</label>
+              <input type="text" className="form-input" placeholder="給油場所など" value={fuelMemo} onChange={e => setFuelMemo(e.target.value)} />
+            </div>
+
+            <button className="btn btn-primary" onClick={handleAddFuel}>記録する</button>
+          </div>
+        </div>
+      )}
+
+      {/* ドライブフォームモーダル */}
+      {showDriveForm && (
+        <div className="modal-overlay" onClick={() => setShowDriveForm(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+            <div className="modal-handle" />
+            <div className="modal-title">🚗 ドライブを記録</div>
+
+            <div className="form-group">
+              <label className="form-label">日付</label>
+              <input type="date" className="form-input" value={driveDate} onChange={e => setDriveDate(e.target.value)} />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">出発地</label>
+                <input type="text" className="form-input" placeholder="自宅" value={from} onChange={e => setFrom(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">目的地</label>
+                <input type="text" className="form-input" placeholder="スーパー" value={to} onChange={e => setTo(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">距離 (km)</label>
+                <input type="number" className="form-input" placeholder="15.5" value={distance} onChange={e => setDistance(e.target.value)} inputMode="decimal" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">目的</label>
+                <select className="form-input" value={purpose} onChange={e => setPurpose(e.target.value)}>
+                  {PURPOSES.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">メモ (任意)</label>
+              <input type="text" className="form-input" placeholder="特記事項" value={driveMemo} onChange={e => setDriveMemo(e.target.value)} />
+            </div>
+
+            <button className="btn btn-primary" onClick={handleAddDrive}>記録する</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==================== ANALYSIS TAB ====================
+function AnalysisTab({ expenses, income, fuelLogs }) {
+  const [viewType, setViewType] = useState('monthly');
+
+  // 月別データ
+  const monthlyData = {};
+  expenses.forEach(e => {
+    const m = e.date.substring(0, 7);
+    if (!monthlyData[m]) monthlyData[m] = { expense: 0, income: 0 };
+    monthlyData[m].expense += e.amount;
+  });
+  income.forEach(i => {
+    const m = i.date.substring(0, 7);
+    if (!monthlyData[m]) monthlyData[m] = { expense: 0, income: 0 };
+    monthlyData[m].income += i.amount;
+  });
+
+  const months = Object.keys(monthlyData).sort().slice(-6);
+
+  // カテゴリ別（全期間）
+  const catTotals = {};
+  expenses.forEach(e => {
+    catTotals[e.category] = (catTotals[e.category] || 0) + e.amount;
+  });
+  const catEntries = Object.entries(catTotals).sort((a,b) => b[1]-a[1]);
+  const totalAllExpense = expenses.reduce((s,e) => s+e.amount, 0);
+
+  // 燃費トレンド
+  const sortedFuel = [...fuelLogs].sort((a,b) => a.date.localeCompare(b.date));
+  const fuelTrend = [];
+  sortedFuel.forEach((log, idx) => {
+    if (idx > 0 && log.odometer && sortedFuel[idx-1].odometer) {
+      const dist = log.odometer - sortedFuel[idx-1].odometer;
+      if (dist > 0) {
+        fuelTrend.push({ date: log.date, eff: dist / log.liters });
+      }
+    }
+  });
+
+  return (
+    <div className="content">
+      <div style={{display:'flex', gap:8, marginBottom:12}}>
+        {['monthly', 'category', 'fuel'].map(v => (
+          <button
+            key={v}
+            className={`btn btn-small ${viewType === v ? 'btn-primary' : 'btn-secondary'}`}
+            style={{flex:1}}
+            onClick={() => setViewType(v)}
+          >
+            {v === 'monthly' ? '月別' : v === 'category' ? 'カテゴリ' : '燃費'}
+          </button>
+        ))}
+      </div>
+
+      {viewType === 'monthly' && (
+        <div className="card">
+          <div className="card-title">📅 月別推移（直近6ヶ月）</div>
+          {months.length === 0 ? (
+            <div className="empty-state">
+              <div className="emoji">📊</div>
+              <p>データがありません</p>
+            </div>
+          ) : (
+            <>
+              <div className="chart-container">
+                <LineChart
+                  labels={months.map(m => m.replace('-', '/'))}
+                  datasets={[
+                    {
+                      label: '支出',
+                      data: months.map(m => monthlyData[m]?.expense || 0),
+                      borderColor: '#e74c3c',
+                      backgroundColor: 'rgba(231,76,60,0.1)',
+                      tension: 0.4,
+                      fill: true,
+                    },
+                    {
+                      label: '収入',
+                      data: months.map(m => monthlyData[m]?.income || 0),
+                      borderColor: '#27ae60',
+                      backgroundColor: 'rgba(39,174,96,0.1)',
+                      tension: 0.4,
+                      fill: true,
+                    }
+                  ]}
+                />
+              </div>
+              <div style={{marginTop:12}}>
+                {months.map(m => (
+                  <div key={m} className="list-item">
+                    <div className="item-info">
+                      <div className="item-title">{m.replace('-', '年')}月</div>
+                    </div>
+                    <div style={{textAlign:'right'}}>
+                      <div style={{fontSize:13, color:'#e74c3c', fontWeight:600}}>-{formatCurrency(monthlyData[m]?.expense || 0)}</div>
+                      <div style={{fontSize:13, color:'#27ae60', fontWeight:600}}>+{formatCurrency(monthlyData[m]?.income || 0)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {viewType === 'category' && (
+        <div className="card">
+          <div className="card-title">🏷️ カテゴリ別支出（全期間）</div>
+          {catEntries.length === 0 ? (
+            <div className="empty-state">
+              <div className="emoji">📊</div>
+              <p>データがありません</p>
+            </div>
+          ) : (
+            <>
+              <div className="chart-container">
+                <DonutChart
+                  data={catEntries.map(([,v]) => v)}
+                  colors={catEntries.map(([k]) => getCategoryInfo(k).color)}
+                  labels={catEntries.map(([k]) => getCategoryInfo(k).label)}
+                />
+              </div>
+              <div style={{marginTop:12}}>
+                {catEntries.map(([catId, amt]) => {
+                  const cat = getCategoryInfo(catId);
+                  const pct = totalAllExpense > 0 ? (amt / totalAllExpense * 100) : 0;
+                  return (
+                    <div key={catId} style={{marginBottom:10}}>
+                      <div style={{display:'flex', justifyContent:'space-between', marginBottom:4}}>
+                        <span style={{fontSize:13}}>{cat.emoji} {cat.label}</span>
+                        <span style={{fontSize:13, fontWeight:600}}>{formatCurrency(amt)} ({pct.toFixed(1)}%)</span>
+                      </div>
+                      <div className="progress-bar">
+                        <div className="progress-fill" style={{width:`${pct}%`, background:cat.color}} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {viewType === 'fuel' && (
+        <div className="card">
+          <div className="card-title">⛽ 燃費トレンド</div>
+          {fuelTrend.length < 2 ? (
+            <div className="empty-state">
+              <div className="emoji">⛽</div>
+              <p>燃費計算にはオドメーター付きの<br/>給油記録が2件以上必要です</p>
+            </div>
+          ) : (
+            <>
+              <div className="chart-container">
+                <LineChart
+                  labels={fuelTrend.map(f => formatDate(f.date))}
+                  datasets={[{
+                    label: '燃費 (km/L)',
+                    data: fuelTrend.map(f => parseFloat(f.eff.toFixed(2))),
+                    borderColor: '#f39c12',
+                    backgroundColor: 'rgba(243,156,18,0.1)',
+                    tension: 0.4,
+                    fill: true,
+                  }]}
+                />
+              </div>
+              <div style={{marginTop:12}}>
+                {fuelTrend.map((f, i) => (
+                  <div key={i} className="list-item">
+                    <div className="item-info">
+                      <div className="item-title">{formatDate(f.date)}</div>
+                    </div>
+                    <div className="fuel-stat-value" style={{fontSize:16}}>{f.eff.toFixed(1)} km/L</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==================== SETTINGS TAB ====================
+function SettingsTab({ budget, onSetBudget, expenses, income, fuelLogs, driveLogs, tempExpenses }) {
+  const [currentMonth] = useState(getCurrentMonth());
+  const [budgetInput, setBudgetInput] = useState(budget[currentMonth] ? String(budget[currentMonth]) : '');
+  const [showExport, setShowExport] = useState(false);
+
+  const handleSetBudget = () => {
+    const amt = parseInt(budgetInput);
+    if (!amt || amt <= 0) return;
+    onSetBudget(currentMonth, amt);
+  };
+
+  const exportData = () => {
+    const data = {
+      exportDate: new Date().toISOString(),
+      expenses, income, fuelLogs, driveLogs, tempExpenses,
+      budget,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `kakeibo_backup_${getToday()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const totalExpense = expenses.reduce((s,e) => s+e.amount, 0);
+  const totalIncome = income.reduce((s,i) => s+i.amount, 0);
+
+  return (
+    <div className="content">
+      {/* 予算設定 */}
+      <div className="card">
+        <div className="card-title">🎯 月間予算設定</div>
+        <div style={{fontSize:12, color:'#888', marginBottom:10}}>
+          {currentMonth.replace('-','年')}月の予算
+        </div>
+        <div className="form-row">
+          <div className="form-group">
+            <input
+              type="number"
+              className="form-input"
+              placeholder="例: 200000"
+              value={budgetInput}
+              onChange={e => setBudgetInput(e.target.value)}
+              inputMode="numeric"
+            />
+          </div>
+          <div className="form-group">
+            <button className="btn btn-primary" style={{height:'100%'}} onClick={handleSetBudget}>設定</button>
+          </div>
+        </div>
+        {budget[currentMonth] && (
+          <div style={{fontSize:13, color:'#27ae60', marginTop:4}}>
+            ✓ 現在の予算: {formatCurrency(budget[currentMonth])}
+          </div>
+        )}
+      </div>
+
+      {/* 統計 */}
+      <div className="card">
+        <div className="card-title">📊 全期間統計</div>
+        <div className="summary-grid">
+          <div className="summary-item">
+            <div className="summary-value">{expenses.length + income.length}</div>
+            <div className="summary-label">総記録数</div>
+          </div>
+          <div className="summary-item">
+            <div className="summary-value orange">{fuelLogs.length + driveLogs.length}</div>
+            <div className="summary-label">車両記録数</div>
+          </div>
+          <div className="summary-item">
+            <div className="summary-value red">{formatCurrency(totalExpense)}</div>
+            <div className="summary-label">総支出</div>
+          </div>
+          <div className="summary-item">
+            <div className="summary-value green">{formatCurrency(totalIncome)}</div>
+            <div className="summary-label">総収入</div>
+          </div>
+        </div>
+      </div>
+
+      {/* データ管理 */}
+      <div className="card">
+        <div className="card-title">💾 データ管理</div>
+        <div style={{display:'grid', gap:10}}>
+          <button className="btn btn-secondary" onClick={exportData}>
+            📤 データをエクスポート (JSON)
+          </button>
+          <div style={{fontSize:11, color:'#999', textAlign:'center'}}>
+            データはこのデバイスのブラウザに保存されています
+          </div>
+        </div>
+      </div>
+
+      {/* アプリ情報 */}
+      <div className="card">
+        <div className="card-title">ℹ️ アプリについて</div>
+        <div style={{fontSize:13, color:'#666', lineHeight:1.8}}>
+          <div>家計簿・燃費管理アプリ v3.0</div>
+          <div>• 支出・収入の記録と分析</div>
+          <div>• 仮支出機能（未確定費用の管理）</div>
+          <div>• 給油・ドライブ記録</div>
+          <div>• 燃費自動計算</div>
+          <div>• オフライン対応（localStorage）</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==================== MAIN APP ====================
+function App() {
+  const [activeTab, setActiveTab] = useState('home');
+  const [notification, setNotification] = useState(null);
+  const [currentMonth] = useState(getCurrentMonth());
+
+  // データ
+  const [expenses, setExpenses] = useState(() => loadData(STORAGE_KEYS.expenses, []));
+  const [income, setIncome] = useState(() => loadData(STORAGE_KEYS.income, []));
+  const [budget, setBudget] = useState(() => loadData(STORAGE_KEYS.budget, {}));
+  const [fuelLogs, setFuelLogs] = useState(() => loadData(STORAGE_KEYS.fuelLogs, []));
+  const [driveLogs, setDriveLogs] = useState(() => loadData(STORAGE_KEYS.driveLogs, []));
+  const [tempExpenses, setTempExpenses] = useState(() => loadData(STORAGE_KEYS.tempExpenses, []));
+
+  // 永続化
+  useEffect(() => { saveData(STORAGE_KEYS.expenses, expenses); }, [expenses]);
+  useEffect(() => { saveData(STORAGE_KEYS.income, income); }, [income]);
+  useEffect(() => { saveData(STORAGE_KEYS.budget, budget); }, [budget]);
+  useEffect(() => { saveData(STORAGE_KEYS.fuelLogs, fuelLogs); }, [fuelLogs]);
+  useEffect(() => { saveData(STORAGE_KEYS.driveLogs, driveLogs); }, [driveLogs]);
+  useEffect(() => { saveData(STORAGE_KEYS.tempExpenses, tempExpenses); }, [tempExpenses]);
+
+  const showNotif = (msg) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(null), 2500);
+  };
+
+  // 支出操作
+  const addExpense = (e) => { setExpenses(prev => [e, ...prev]); showNotif('支出を追加しました'); };
+  const deleteExpense = (id) => { setExpenses(prev => prev.filter(e => e.id !== id)); showNotif('削除しました'); };
+
+  // 仮支出操作
+  const addTempExpense = (t) => { setTempExpenses(prev => [t, ...prev]); showNotif('仮支出を追加しました'); };
+  const confirmTempExpense = (id) => {
+    const t = tempExpenses.find(t => t.id === id);
+    if (t) {
+      setExpenses(prev => [{ ...t, id: Date.now() }, ...prev]);
+      setTempExpenses(prev => prev.filter(t => t.id !== id));
+      showNotif('支出として確定しました');
+    }
+  };
+  const deleteTempExpense = (id) => { setTempExpenses(prev => prev.filter(t => t.id !== id)); showNotif('削除しました'); };
+
+  // 収入操作
+  const addIncome = (i) => { setIncome(prev => [i, ...prev]); showNotif('収入を追加しました'); };
+  const deleteIncome = (id) => { setIncome(prev => prev.filter(i => i.id !== id)); showNotif('削除しました'); };
+
+  // 燃料操作
+  const addFuelLog = (l) => { setFuelLogs(prev => [l, ...prev]); showNotif('給油を記録しました'); };
+  const deleteFuelLog = (id) => { setFuelLogs(prev => prev.filter(l => l.id !== id)); showNotif('削除しました'); };
+  const addDriveLog = (d) => { setDriveLogs(prev => [d, ...prev]); showNotif('ドライブを記録しました'); };
+  const deleteDriveLog = (id) => { setDriveLogs(prev => prev.filter(d => d.id !== id)); showNotif('削除しました'); };
+
+  // 予算設定
+  const setBudgetForMonth = (month, amt) => {
+    setBudget(prev => ({ ...prev, [month]: amt }));
+    showNotif('予算を設定しました');
+  };
+
+  const tabs = [
+    { id: 'home', label: 'ホーム', icon: '🏠' },
+    { id: 'expense', label: '支出', icon: '💸' },
+    { id: 'income', label: '収入', icon: '💰' },
+    { id: 'fuel', label: '車両', icon: '🚗' },
+    { id: 'analysis', label: '分析', icon: '📊' },
+    { id: 'settings', label: '設定', icon: '⚙️' },
+  ];
+
+  return (
+    <div className="app-container">
+      <div className="header">
+        <h1>家計簿・燃費管理</h1>
+        <div className="header-subtitle">
+          {currentMonth.replace('-', '年')}月 · スマート家計管理
+        </div>
+        <div className="tab-bar">
+          {tabs.slice(0,3).map(t => (
+            <button
+              key={t.id}
+              className={`tab-btn ${activeTab === t.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(t.id)}
+            >
+              {t.icon} {t.label}
+            </button>
+          ))}
+        </div>
+        <div className="tab-bar" style={{marginTop:4}}>
+          {tabs.slice(3).map(t => (
+            <button
+              key={t.id}
+              className={`tab-btn ${activeTab === t.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(t.id)}
+            >
+              {t.icon} {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {activeTab === 'home' && (
+        <HomeTab
+          expenses={expenses}
+          income={income}
+          budget={budget}
+          tempExpenses={tempExpenses}
+          onConfirmTemp={confirmTempExpense}
+          onDeleteTemp={deleteTempExpense}
+          currentMonth={currentMonth}
+          onNavigate={setActiveTab}
+        />
+      )}
+      {activeTab === 'expense' && (
+        <ExpenseTab
+          expenses={expenses}
+          onAdd={addExpense}
+          onDelete={deleteExpense}
+          tempExpenses={tempExpenses}
+          onAddTemp={addTempExpense}
+        />
+      )}
+      {activeTab === 'income' && (
+        <IncomeTab income={income} onAdd={addIncome} onDelete={deleteIncome} />
+      )}
+      {activeTab === 'fuel' && (
+        <FuelTab
+          fuelLogs={fuelLogs}
+          driveLogs={driveLogs}
+          onAddFuel={addFuelLog}
+          onDeleteFuel={deleteFuelLog}
+          onAddDrive={addDriveLog}
+          onDeleteDrive={deleteDriveLog}
+        />
+      )}
+      {activeTab === 'analysis' && (
+        <AnalysisTab expenses={expenses} income={income} fuelLogs={fuelLogs} />
+      )}
+      {activeTab === 'settings' && (
+        <SettingsTab
+          budget={budget}
+          onSetBudget={setBudgetForMonth}
+          expenses={expenses}
+          income={income}
+          fuelLogs={fuelLogs}
+          driveLogs={driveLogs}
+          tempExpenses={tempExpenses}
+        />
+      )}
+
+      {notification && <Notification message={notification} onClose={() => setNotification(null)} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
