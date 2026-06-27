@@ -52,6 +52,7 @@ const DEFAULT_EXP_CATS = [
   { id:2, name:"日用品" },
   { id:3, name:"交通費" },
   { id:4, name:"その他" },
+  { id:5, name:"ガソリン" },
 ];
 
 const DEFAULT_FIXED = [
@@ -1677,9 +1678,17 @@ function App() {
         const d = newFuel.date || today;
         const [, m, day] = d.split("-");
         const dateStr = Number(m) + "/" + Number(day);
-        const fuelCatId = (expCats.find(c => c.name === "交通費") || expCats[0] || { id:4 }).id;
+        const now = Date.now();
+        let gasCat = expCats.find(c => c.name === "ガソリン");
+        let fuelCatId;
+        if (!gasCat) {
+          fuelCatId = now + 2;
+          setExpCats(prev => [...prev, { id: fuelCatId, name: "ガソリン" }]);
+        } else {
+          fuelCatId = gasCat.id;
+        }
         setCurrent(c => ({...c, expenses: [...(c.expenses||[]), {
-          id: Date.now() + 1,
+          id: now + 1,
           date: dateStr,
           name: "ガソリン",
           amount: Number(newFuel.amount),
