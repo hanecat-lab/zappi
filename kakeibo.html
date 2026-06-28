@@ -1261,6 +1261,16 @@ function App() {
                 <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"#5070A0", paddingTop:4, fontWeight:700 }}>
                   <span>繰越合計</span><span>{maskE(yen(carryovers.reduce((s,c)=>s+(Number(c.amount)||0),0)))}</span>
                 </div>
+                {(()=>{
+                  const carryTotal = carryovers.reduce((s,c)=>s+(Number(c.amount)||0),0);
+                  const afterBonus = bonusBal - carryTotal;
+                  return (
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", fontSize:12, paddingTop:6, marginTop:2, borderTop:"1px dashed #DDE8F8" }}>
+                      <span style={{ color:"#8060C0" }}>賞与から引くと（仮）</span>
+                      <span style={{ fontWeight:700, color: afterBonus < 0 ? "#C84040" : "#8060C0" }}>{maskE(yen(afterBonus))}</span>
+                    </div>
+                  );
+                })()}
               </div>
             )}
             {carryovers.length===0 && !showAddCarry && (
