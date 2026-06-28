@@ -1660,7 +1660,7 @@ function renderCasts() {
           if (!c.lastDate) return '';
           const diff = Math.floor((Date.now() - new Date(c.lastDate)) / 86400000);
           const col2 = diff >= 60 ? '#ff4d6d' : diff >= 30 ? '#ffd166' : 'var(--text2)';
-          return ' <span style="font-size:11px;color:' + col2 + '">(' + diff + '日前)</span>';
+          return ' <span style="font-size:11px;color:' + col2 + ';white-space:nowrap">(' + diff + '日前)</span>';
         })()
       + '</div>'
       + '<div class="cast-stat">指名回数：<span>' + c.count + '回</span></div>'
