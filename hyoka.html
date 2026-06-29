@@ -897,6 +897,7 @@
     <button class="sort-btn active" data-ssort="lastDate" onclick="setStoreSort(this,'lastDate')">最終訪問日</button>
     <button class="sort-btn" data-ssort="count" onclick="setStoreSort(this,'count')">訪問回数</button>
     <button class="sort-btn" data-ssort="amount" onclick="setStoreSort(this,'amount')">合計金額</button>
+    <button class="add-btn" style="margin-left:auto" onclick="openStoreAddModal()">＋</button>
   </div>
   <div id="store-list"></div>
   <div id="stats-view"></div>
@@ -1091,6 +1092,26 @@
   </div>
 </div>
 
+<!-- STORE ADD MODAL -->
+<div class="modal-overlay" id="store-add-modal" onclick="bgCloseStoreAdd(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">
+      <span>店舗を追加</span>
+      <button class="modal-close" onclick="closeStoreAddModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">店舗名 <span style="color:var(--neon-pink)">*</span></label>
+      <input type="text" class="form-input" id="sa-name" placeholder="店舗名">
+    </div>
+    <div class="form-group">
+      <label class="form-label">カテゴリー</label>
+      <select class="form-input" id="sa-category"></select>
+    </div>
+    <button class="submit-btn" onclick="saveNewStore()" style="margin-top:8px">追加</button>
+  </div>
+</div>
+
 <!-- STORE LOCATION MODAL -->
 <div class="modal-overlay" id="store-loc-modal" onclick="bgCloseStoreLoc(event)">
   <div class="modal-sheet">
@@ -1184,6 +1205,9 @@ function getStoreUrl(name) { return loadStoreUrls()[name] || ''; }
 const CRKEY = 'hyoka_cast_ratings_v1';
 function loadCastRatings() { try { return JSON.parse(localStorage.getItem(CRKEY) || '{}'); } catch(e) { return {}; } }
 function saveCastRatings(r) { localStorage.setItem(CRKEY, JSON.stringify(r)); }
+const SSKEY = 'hyoka_standalone_stores_v1';
+function loadStandaloneStores() { try { return JSON.parse(localStorage.getItem(SSKEY)||'[]'); } catch(e) { return []; } }
+function saveStandaloneStores(a) { localStorage.setItem(SSKEY, JSON.stringify(a)); }
 const ASKEY = 'hyoka_autosave_v1';
 function loadAutoSaves() {
   try {
@@ -1203,7 +1227,8 @@ function doAutoSave(type) {
     storeMemos: loadStoreMemos(),
     storeUrls: loadStoreUrls(),
     storeWatchlist: loadWatchlist(),
-    castRatings: loadCastRatings()
+    castRatings: loadCastRatings(),
+    standaloneStores: loadStandaloneStores()
   };
   var list = loadAutoSaves();
   list.unshift(snapshot);
@@ -1344,6 +1369,7 @@ function restoreBackup(index) {
     if (data.storeUrls)  saveStoreUrls(data.storeUrls);
     if (data.storeWatchlist) saveWatchlist(data.storeWatchlist);
     if (data.castRatings) saveCastRatings(data.castRatings);
+    if (data.standaloneStores) saveStandaloneStores(data.standaloneStores);
     renderCatTabs();
     if (currentView === 'casts') renderCasts(); else renderList();
     closeSettings();
@@ -2051,7 +2077,8 @@ function exportData() {
     storeMemos: loadStoreMemos(),
     storeUrls: loadStoreUrls(),
     storeWatchlist: loadWatchlist(),
-    castRatings: loadCastRatings()
+    castRatings: loadCastRatings(),
+    standaloneStores: loadStandaloneStores()
   };
   doAutoSave('manual');
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -2092,6 +2119,9 @@ function importData(ev) {
       }
       if (data.castRatings && typeof data.castRatings === 'object') {
         saveCastRatings(data.castRatings);
+      }
+      if (data.standaloneStores && Array.isArray(data.standaloneStores)) {
+        saveStandaloneStores(data.standaloneStores);
       }
       currentCat = 'all';
       renderCatTabs();
@@ -2200,25 +2230,22 @@ let currentStoreSort = 'lastDate';
 function aggregateStores() {
   const entries = load();
   const map = {};
+  loadStandaloneStores().forEach(function(ss) {
+    if (currentCat !== 'all' && ss.category !== currentCat) return;
+    const key = ss.storeName + '|' + ss.category;
+    if (!map[key]) map[key] = { storeName: ss.storeName, category: ss.category, count: 0, lastDate: '', totalAmount: 0 };
+  });
   entries.forEach(function(e) {
     if (currentCat !== 'all' && e.category !== currentCat) return;
     const key = (e.storeName || '（店名なし）') + '|' + e.category;
-    if (!map[key]) {
-      map[key] = {
-        storeName: e.storeName || '（店名なし）',
-        category: e.category,
-        count: 0, lastDate: '', totalAmount: 0
-      };
-    }
+    if (!map[key]) map[key] = { storeName: e.storeName||'（店名なし）', category: e.category, count: 0, lastDate: '', totalAmount: 0 };
     const s = map[key];
     s.count++;
     if (!s.lastDate || e.date > s.lastDate) s.lastDate = e.date;
     s.totalAmount += (e.amount || 0);
   });
   return Object.values(map).map(function(s) {
-    return Object.assign(s, {
-      avgAmount: Math.round(s.totalAmount / s.count)
-    });
+    return Object.assign(s, { avgAmount: s.count > 0 ? Math.round(s.totalAmount / s.count) : 0 });
   });
 }
 
@@ -2473,6 +2500,36 @@ function deleteWatchlistEntry() {
   if (d[wlStoreName]) d[wlStoreName] = d[wlStoreName].filter(function(x) { return x.id !== wlEntryId; });
   saveWatchlist(d);
   closeWatchlistModal();
+  renderStores();
+}
+
+function openStoreAddModal() {
+  var sel = document.getElementById('sa-category');
+  sel.innerHTML = loadCats().map(function(c) {
+    return '<option value="' + esc(c.name) + '">' + esc(c.name) + '</option>';
+  }).join('');
+  document.getElementById('sa-name').value = '';
+  document.getElementById('store-add-modal').classList.add('open');
+}
+function closeStoreAddModal() {
+  document.getElementById('store-add-modal').classList.remove('open');
+}
+function bgCloseStoreAdd(e) {
+  if (e.target.id === 'store-add-modal') closeStoreAddModal();
+}
+function saveNewStore() {
+  var name = document.getElementById('sa-name').value.trim();
+  if (!name) { alert('店舗名を入力してください'); return; }
+  var cat  = document.getElementById('sa-category').value;
+  var list = loadStandaloneStores();
+  var key  = name + '|' + cat;
+  if (list.some(function(s) { return s.storeName + '|' + s.category === key; })) {
+    alert('同じ店舗・カテゴリーがすでに登録されています');
+    return;
+  }
+  list.push({ storeName: name, category: cat });
+  saveStandaloneStores(list);
+  closeStoreAddModal();
   renderStores();
 }
 
