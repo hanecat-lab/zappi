@@ -1894,7 +1894,9 @@ function refreshOpenCastTagSection() {
 }
 
 function toggleTagGroupOpen(gid) {
-  tagGroupOpen[gid] = !tagGroupOpen[gid];
+  var wasOpen = !!tagGroupOpen[gid];
+  tagGroupOpen = {};
+  if (!wasOpen) tagGroupOpen[gid] = true;
   renderTagFilterBar();
 }
 
@@ -1907,8 +1909,9 @@ function renderTagFilterBar() {
   bar.classList.add('has-tags');
   var html = '';
 
+  // 選択中タグ行（クリアボタン付き）
   if (currentTagFilter.length) {
-    html += '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px">';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:5px;padding-bottom:6px">';
     html += '<span class="tag-chip removable filter-active" onclick="clearTagFilter()">✕ クリア</span>';
     currentTagFilter.forEach(function(tid) {
       var t = allTags.find(function(x){ return x.id===tid; });
@@ -1917,56 +1920,52 @@ function renderTagFilterBar() {
     html += '</div>';
   }
 
+  // グループチップ横スクロール行
+  var groupedIds = groups.map(function(g){ return g.id; });
+  var ungrouped = allTags.filter(function(t){ return !groupedIds.includes(t.groupId); });
+  html += '<div style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none">';
   groups.forEach(function(g) {
     var gTags = allTags.filter(function(t){ return t.groupId === g.id; });
     if (!gTags.length) return;
     var isOpen = !!tagGroupOpen[g.id];
     var hasActive = gTags.some(function(t){ return currentTagFilter.includes(t.id); });
-    html += '<div style="margin-bottom:3px">';
-    html += '<button onclick="toggleTagGroupOpen(\'' + g.id + '\')" style="'
-      + 'width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;'
-      + 'padding:4px 8px;background:' + (hasActive ? 'rgba(0,229,255,.15)' : 'rgba(255,255,255,.04)') + ';'
-      + 'color:' + (hasActive ? 'var(--neon-cyan)' : 'var(--text2)') + ';'
-      + 'border:1px solid ' + (hasActive ? 'rgba(0,229,255,.4)' : 'rgba(255,255,255,.1)') + ';'
-      + 'border-radius:8px;font-size:.76rem;cursor:pointer;font-weight:' + (hasActive ? '700' : '400') + '">';
-    html += '<span>' + esc(g.name) + ' <span style="opacity:.6;font-size:.68rem">(' + gTags.length + ')</span></span>';
-    html += '<span style="font-size:.65rem">' + (isOpen ? '▼' : '▶') + '</span>';
-    html += '</button>';
-    if (isOpen) {
-      html += '<div style="display:flex;flex-wrap:wrap;gap:5px;padding:6px 4px 2px">';
-      gTags.forEach(function(t) {
-        var active = currentTagFilter.includes(t.id);
-        html += '<span class="tag-chip removable' + (active?' filter-active':'') + '" onclick="toggleTagFilter(\'' + esc(t.id) + '\')">' + esc(t.name) + '</span>';
-      });
-      html += '</div>';
-    }
-    html += '</div>';
+    html += '<span onclick="toggleTagGroupOpen(\'' + g.id + '\')" style="'
+      + 'flex-shrink:0;cursor:pointer;white-space:nowrap;padding:5px 11px;border-radius:20px;font-size:.76rem;'
+      + 'border:1px solid ' + (isOpen ? 'var(--neon-cyan)' : hasActive ? 'rgba(0,229,255,.5)' : 'rgba(255,255,255,.2)') + ';'
+      + 'background:' + (isOpen ? 'rgba(0,229,255,.22)' : hasActive ? 'rgba(0,229,255,.1)' : 'rgba(255,255,255,.05)') + ';'
+      + 'color:' + (isOpen || hasActive ? 'var(--neon-cyan)' : 'var(--text2)') + ';'
+      + 'font-weight:' + (isOpen || hasActive ? '700' : '400') + '">'
+      + esc(g.name) + (isOpen ? ' ▾' : '')
+      + '</span>';
   });
-
-  var groupedIds = groups.map(function(g){ return g.id; });
-  var ungrouped = allTags.filter(function(t){ return !groupedIds.includes(t.groupId); });
   if (ungrouped.length) {
     var isOpenU = !!tagGroupOpen['ungrouped'];
     var hasActiveU = ungrouped.some(function(t){ return currentTagFilter.includes(t.id); });
-    html += '<div style="margin-bottom:3px">';
-    html += '<button onclick="toggleTagGroupOpen(\'ungrouped\')" style="'
-      + 'width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;'
-      + 'padding:4px 8px;background:' + (hasActiveU ? 'rgba(0,229,255,.15)' : 'rgba(255,255,255,.04)') + ';'
-      + 'color:' + (hasActiveU ? 'var(--neon-cyan)' : 'var(--text2)') + ';'
-      + 'border:1px solid ' + (hasActiveU ? 'rgba(0,229,255,.4)' : 'rgba(255,255,255,.1)') + ';'
-      + 'border-radius:8px;font-size:.76rem;cursor:pointer;font-weight:' + (hasActiveU ? '700' : '400') + '">';
-    html += '<span>未分類 <span style="opacity:.6;font-size:.68rem">(' + ungrouped.length + ')</span></span>';
-    html += '<span style="font-size:.65rem">' + (isOpenU ? '▼' : '▶') + '</span>';
-    html += '</button>';
-    if (isOpenU) {
-      html += '<div style="display:flex;flex-wrap:wrap;gap:5px;padding:6px 4px 2px">';
-      ungrouped.forEach(function(t) {
+    html += '<span onclick="toggleTagGroupOpen(\'ungrouped\')" style="'
+      + 'flex-shrink:0;cursor:pointer;white-space:nowrap;padding:5px 11px;border-radius:20px;font-size:.76rem;'
+      + 'border:1px solid ' + (isOpenU ? 'var(--neon-cyan)' : hasActiveU ? 'rgba(0,229,255,.5)' : 'rgba(255,255,255,.2)') + ';'
+      + 'background:' + (isOpenU ? 'rgba(0,229,255,.22)' : hasActiveU ? 'rgba(0,229,255,.1)' : 'rgba(255,255,255,.05)') + ';'
+      + 'color:' + (isOpenU || hasActiveU ? 'var(--neon-cyan)' : 'var(--text2)') + ';'
+      + 'font-weight:' + (isOpenU || hasActiveU ? '700' : '400') + '">'
+      + '未分類' + (isOpenU ? ' ▾' : '')
+      + '</span>';
+  }
+  html += '</div>';
+
+  // 展開タグ
+  var openGid = Object.keys(tagGroupOpen).find(function(k){ return tagGroupOpen[k]; });
+  if (openGid) {
+    var expandedTags = openGid === 'ungrouped'
+      ? ungrouped
+      : allTags.filter(function(t){ return t.groupId === openGid; });
+    if (expandedTags.length) {
+      html += '<div style="display:flex;flex-wrap:wrap;gap:5px;padding-top:7px">';
+      expandedTags.forEach(function(t) {
         var active = currentTagFilter.includes(t.id);
         html += '<span class="tag-chip removable' + (active?' filter-active':'') + '" onclick="toggleTagFilter(\'' + esc(t.id) + '\')">' + esc(t.name) + '</span>';
       });
       html += '</div>';
     }
-    html += '</div>';
   }
 
   bar.innerHTML = html;
