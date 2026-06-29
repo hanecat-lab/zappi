@@ -1885,6 +1885,13 @@ function toggleRatingHint(id, ev) {
 }
 
 // ===== TAG FUNCTIONS =====
+function refreshOpenCastTagSection() {
+  if (!currentCastKey) return;
+  var safeKey = currentCastKey.replace(/[^a-zA-Z0-9]/g,'_');
+  var sec = document.getElementById('cast-tag-section-' + safeKey);
+  if (sec) sec.outerHTML = renderCastTagSection(currentCastKey);
+}
+
 function renderTagFilterBar() {
   var bar = document.getElementById('tag-filter-bar');
   if (!bar) return;
@@ -2141,6 +2148,7 @@ function addTagGroup() {
   saveTagGroups(groups);
   renderTagManageBody();
   renderTagFilterBar();
+  refreshOpenCastTagSection();
 }
 function editTagGroupName(gid) {
   var groups = loadTagGroups();
@@ -2152,6 +2160,7 @@ function editTagGroupName(gid) {
   saveTagGroups(groups);
   renderTagManageBody();
   renderTagFilterBar();
+  refreshOpenCastTagSection();
 }
 function deleteTagGroup(gid) {
   var tags = loadTagMaster();
@@ -2166,6 +2175,7 @@ function deleteTagGroup(gid) {
   saveTagGroups(groups);
   renderTagManageBody();
   renderTagFilterBar();
+  refreshOpenCastTagSection();
 }
 function addTagToGroup(gid) {
   var name = prompt('タグ名を入力してください');
@@ -2176,6 +2186,7 @@ function addTagToGroup(gid) {
   saveTagMaster(tags);
   renderTagManageBody();
   renderTagFilterBar();
+  refreshOpenCastTagSection();
 }
 function editTagName(tid) {
   var tags = loadTagMaster();
@@ -2187,6 +2198,7 @@ function editTagName(tid) {
   saveTagMaster(tags);
   renderTagManageBody();
   renderTagFilterBar();
+  refreshOpenCastTagSection();
 }
 function deleteTagItem(tid) {
   if (!confirm('このタグを削除しますか？\nキャストへの付与も解除されます。')) return;
@@ -2200,6 +2212,7 @@ function deleteTagItem(tid) {
   saveCastTags(m);
   renderTagManageBody();
   renderTagFilterBar();
+  refreshOpenCastTagSection();
   renderCasts();
 }
 
