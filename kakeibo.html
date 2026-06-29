@@ -2313,7 +2313,9 @@ function App() {
 
     return (
       <div style={{ minHeight:"100vh", background:"linear-gradient(180deg,#eef4ff,#f8fbff)", paddingBottom:80 }}>
-        <SubHeader title="ドライブ記録" sub="DRIVE LOG" onBack={() => setPage("fuel")} />
+        <SubHeader title="ドライブ記録" sub="DRIVE LOG" onBack={() => setPage("fuel")} rightAction={
+          <button onClick={()=>setPage("expenses")} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, padding:"6px 12px", color:"#D8EEFF", fontSize:13, cursor:"pointer", whiteSpace:"nowrap" }}>出費へ →</button>
+        } />
         <div style={{ maxWidth:480, margin:"0 auto", padding:"16px" }}>
 
           <div style={{ background:"#fff", borderRadius:16, border:"1px solid #DDE8F8", padding:"20px 16px", marginBottom:16, textAlign:"center" }}>
