@@ -25,9 +25,10 @@
 </head>
 <body>
 <div id="root"></div>
-<!-- v18 -->
+<!-- v19 -->
 <script type="text/babel">
 const { useState, useMemo, useEffect, useRef } = React;
+const APP_VERSION = 19;
 
 const SK = {
   fixed:      "kb_fixed",
@@ -306,6 +307,20 @@ function App() {
   useEffect(() => {
     const saved = lsGet(SK.autoSave, null);
     if (saved && saved.savedAt) { setAutoSaveData(saved); setShowRestorePrompt(true); }
+  }, []);
+
+  // 起動時に最新バージョンを確認し、古ければキャッシュを回避して自動更新
+  useEffect(() => {
+    fetch('ver.txt?t=' + Date.now(), { cache: 'no-store' })
+      .then(r => r.ok ? r.text() : null)
+      .then(t => {
+        const n = parseInt(t);
+        if (n && n > APP_VERSION && sessionStorage.getItem('vreload') !== String(n)) {
+          sessionStorage.setItem('vreload', String(n));
+          location.replace(location.pathname + '?v=' + n);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -2864,7 +2879,7 @@ function App() {
             );
           })()}
 
-          <div style={{ textAlign:"center", fontSize:10, color:"#C0CCE0", marginTop:20 }}>ver 18</div>
+          <div style={{ textAlign:"center", fontSize:10, color:"#C0CCE0", marginTop:20 }}>ver {APP_VERSION}</div>
         </div>
       </div>
     );
