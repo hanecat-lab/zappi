@@ -25,10 +25,10 @@
 </head>
 <body>
 <div id="root"></div>
-<!-- v19 -->
+<!-- v20 -->
 <script type="text/babel">
 const { useState, useMemo, useEffect, useRef } = React;
-const APP_VERSION = 19;
+const APP_VERSION = 20;
 
 const SK = {
   fixed:      "kb_fixed",
@@ -2551,72 +2551,51 @@ function App() {
             );
           })()}
 
-          {/* ===== 実ルートで記録（Googleマップ連携・独立モード） ===== */}
-          <div style={{ marginBottom:16 }}>
-            {!(showRouteMode || ldDeparture) ? (
-              <button onClick={()=>setShowRouteMode(true)}
-                style={{ width:"100%", padding:"13px", borderRadius:14, border:"1.5px dashed #8FC8A0", background:"#fff", color:"#2A8A40", fontSize:14, fontWeight:700, cursor:"pointer" }}>
-                🗺️ 実ルートで記録（Googleマップ連携）
-              </button>
-            ) : (() => {
-              const v = parseFloat(ldRouteInput);
-              const ok = !isNaN(v) && v > 0;
-              const rTier = ok ? driveTier(v, ldThreshold) : null;
-              const routeDep = ldDeparture;
-              return (
-                <div style={{ background:"#fff", borderRadius:16, border:"1px solid #DDE8F8", padding:"18px 16px" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-                    <div style={{ fontSize:13, fontWeight:700, color:"#1A2840" }}>🗺️ 実ルートで記録</div>
-                    {!routeDep && (
-                      <button onClick={()=>setShowRouteMode(false)} style={{ background:"none", border:"none", color:"#88A8CC", fontSize:13, cursor:"pointer" }}>閉じる</button>
-                    )}
-                  </div>
-                  {!routeDep ? (
-                    <div style={{ fontSize:12, color:"#88A8CC", padding:"8px 0", lineHeight:1.6 }}>
-                      まず上の <strong style={{ color:"#2348b8" }}>📍 出発（GPS取得）</strong> を押して出発地を記録してください。<br/>
-                      その後ここに「🗺️ Googleマップでルート距離を見る」が表示されます。
-                    </div>
-                  ) : (
-                    <>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-                        <span style={{ fontSize:11, color:"#B0C4E0" }}>出発 {routeDep.time}（{routeDep.lat.toFixed(4)}, {routeDep.lng.toFixed(4)}）</span>
-                        <button onClick={()=>{ setLdDeparture(null); setLdStatus("idle"); setLdLive(null); setLdRouteDest(null); setLdRouteInput(""); }} style={{ background:"#F0F4FA", border:"none", borderRadius:6, padding:"3px 8px", fontSize:10, color:"#88A8CC", cursor:"pointer" }}>リセット</button>
-                      </div>
-                      <button onClick={handleOpenRoute} disabled={ldRouteLoading}
-                        style={{ width:"100%", padding:"13px", borderRadius:12, border:"none", cursor: ldRouteLoading?"wait":"pointer", fontSize:14, fontWeight:700,
-                          background: ldRouteLoading ? "#C8D8F0" : "#2A8A40", color:"#fff", marginBottom:12 }}>
-                        {ldRouteLoading ? "GPS取得中…" : "🗺️ Googleマップでルート距離を見る"}
-                      </button>
-                      {ldRouteDest && ldRouteDest.at && (() => {
-                        const dm = Math.round((ldRouteDest.at - routeDep.timestamp) / 60000);
-                        return (
-                          <div style={{ fontSize:11, color:"#2A8A40", textAlign:"center", marginBottom:12, fontWeight:600 }}>
-                            ⏱ タイマー停止：走行時間 {dm >= 60 ? `${Math.floor(dm/60)}時間${dm%60}分` : `${dm}分`}（あとで編集可）
-                          </div>
-                        );
-                      })()}
-                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                        <span style={{ fontSize:12, color:"#4A6090", width:84 }}>ルート距離</span>
-                        <input type="number" inputMode="decimal" value={ldRouteInput} onChange={e=>setLdRouteInput(e.target.value)} onFocus={e=>e.target.select()}
-                          placeholder="例: 22.4" style={{ flex:1, padding:"8px 10px", borderRadius:10, border:"1px solid #DDE8F8", fontSize:16, fontWeight:700, textAlign:"right", fontFamily:"inherit", boxSizing:"border-box" }} />
-                        <span style={{ fontSize:13, color:"#4A6090" }}>km</span>
-                      </div>
-                      {ok && (
-                        <div style={{ fontSize:13, textAlign:"center", color:rTier.color, fontWeight:700, marginTop:10 }}>
-                          {rTier.emoji} {rTier.label}
-                        </div>
-                      )}
-                      <button onClick={handleSaveRoute} disabled={!ok}
-                        style={{ marginTop:12, width:"100%", padding:"12px", borderRadius:12, border:"none", cursor: ok?"pointer":"not-allowed", fontSize:14, fontWeight:700,
-                          background: ok ? "#2348b8" : "#B0C0D8", color:"#fff" }}>
-                        この距離で記録
-                      </button>
-                    </>
-                  )}
+          {/* ===== 実ルートで記録（出発後にのみ表示・Googleマップ連携） ===== */}
+          {ldDeparture && (() => {
+            const v = parseFloat(ldRouteInput);
+            const ok = !isNaN(v) && v > 0;
+            const rTier = ok ? driveTier(v, ldThreshold) : null;
+            const routeDep = ldDeparture;
+            return (
+              <div style={{ background:"#fff", borderRadius:16, border:"1px solid #DDE8F8", padding:"18px 16px", marginBottom:16 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:"#1A2840", marginBottom:12 }}>🗺️ 実ルートで記録（Googleマップ連携）</div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                  <span style={{ fontSize:11, color:"#B0C4E0" }}>出発 {routeDep.time}（{routeDep.lat.toFixed(4)}, {routeDep.lng.toFixed(4)}）</span>
+                  <button onClick={()=>{ setLdDeparture(null); setLdStatus("idle"); setLdLive(null); setLdRouteDest(null); setLdRouteInput(""); }} style={{ background:"#F0F4FA", border:"none", borderRadius:6, padding:"3px 8px", fontSize:10, color:"#88A8CC", cursor:"pointer" }}>リセット</button>
                 </div>
-              );
-            })()}
-          </div>
+                <button onClick={handleOpenRoute} disabled={ldRouteLoading}
+                  style={{ width:"100%", padding:"13px", borderRadius:12, border:"none", cursor: ldRouteLoading?"wait":"pointer", fontSize:14, fontWeight:700,
+                    background: ldRouteLoading ? "#C8D8F0" : "#2A8A40", color:"#fff", marginBottom:12 }}>
+                  {ldRouteLoading ? "GPS取得中…" : "🗺️ Googleマップでルート距離を見る"}
+                </button>
+                {ldRouteDest && ldRouteDest.at && (() => {
+                  const dm = Math.round((ldRouteDest.at - routeDep.timestamp) / 60000);
+                  return (
+                    <div style={{ fontSize:11, color:"#2A8A40", textAlign:"center", marginBottom:12, fontWeight:600 }}>
+                      ⏱ タイマー停止：走行時間 {dm >= 60 ? `${Math.floor(dm/60)}時間${dm%60}分` : `${dm}分`}（あとで編集可）
+                    </div>
+                  );
+                })()}
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <span style={{ fontSize:12, color:"#4A6090", width:84 }}>ルート距離</span>
+                  <input type="number" inputMode="decimal" value={ldRouteInput} onChange={e=>setLdRouteInput(e.target.value)} onFocus={e=>e.target.select()}
+                    placeholder="例: 22.4" style={{ flex:1, padding:"8px 10px", borderRadius:10, border:"1px solid #DDE8F8", fontSize:16, fontWeight:700, textAlign:"right", fontFamily:"inherit", boxSizing:"border-box" }} />
+                  <span style={{ fontSize:13, color:"#4A6090" }}>km</span>
+                </div>
+                {ok && (
+                  <div style={{ fontSize:13, textAlign:"center", color:rTier.color, fontWeight:700, marginTop:10 }}>
+                    {rTier.emoji} {rTier.label}
+                  </div>
+                )}
+                <button onClick={handleSaveRoute} disabled={!ok}
+                  style={{ marginTop:12, width:"100%", padding:"12px", borderRadius:12, border:"none", cursor: ok?"pointer":"not-allowed", fontSize:14, fontWeight:700,
+                    background: ok ? "#2348b8" : "#B0C0D8", color:"#fff" }}>
+                  この距離で記録
+                </button>
+              </div>
+            );
+          })()}
 
           {/* ===== 事後に記録（GPS不要・距離手入力） ===== */}
           <div style={{ marginBottom:16 }}>
