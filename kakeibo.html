@@ -226,6 +226,8 @@ function App() {
   const [ldMemoInput, setLdMemoInput]  = useState("");
   const [ldEditMemo,  setLdEditMemo]   = useState("");
   const [ldOpenMonths,  setLdOpenMonths]  = useState(null);
+  const [showManualDrive, setShowManualDrive] = useState(false);
+  const [manualDrive,     setManualDrive]     = useState({ date:"", distance:"", durationMin:"", memo:"" });
   const [ldThreshold,   setLdThreshold]   = useState(() => lsGet(SK.ldThreshold, 12));
   const [ldThreshEdit,  setLdThreshEdit]  = useState(false);
   const [ldThreshInput, setLdThreshInput] = useState("");
@@ -2427,6 +2429,69 @@ function App() {
                 background: !ldDeparture ? "#B0C0D8" : "#C04040", color:"#fff" }}>
               {ldStatus === "locatingArrival" ? "GPS取得中…" : "🏁 到着（判定・記録）"}
             </button>
+          </div>
+
+          {/* ===== 事後に記録（GPS不要・距離手入力） ===== */}
+          <div style={{ marginBottom:16 }}>
+            {!showManualDrive ? (
+              <button onClick={()=>{ setShowManualDrive(true); setManualDrive({ date:today, distance:"", durationMin:"", memo:"" }); }}
+                style={{ width:"100%", padding:"13px", borderRadius:14, border:"1.5px dashed #A8C0EC", background:"#fff", color:"#3B6FCC", fontSize:14, fontWeight:700, cursor:"pointer" }}>
+                ✏️ 事後に記録（距離を手入力）
+              </button>
+            ) : (
+              <div style={{ background:"#fff", borderRadius:14, border:"1px solid #DDE8F8", padding:"16px" }}>
+                <div style={{ fontSize:13, fontWeight:700, color:"#1A2840", marginBottom:4 }}>事後に記録</div>
+                <div style={{ fontSize:11, color:"#88A8CC", marginBottom:12 }}>出発を押し忘れても、後から距離だけで記録できます</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ fontSize:12, color:"#4A6090", width:64 }}>日付</span>
+                    <input type="date" value={manualDrive.date || today} onChange={e=>setManualDrive(m=>({...m,date:e.target.value}))}
+                      style={{ flex:1, padding:"8px 10px", borderRadius:10, border:"1px solid #DDE8F8", fontSize:14, fontFamily:"inherit", boxSizing:"border-box" }} />
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ fontSize:12, color:"#4A6090", width:64 }}>距離</span>
+                    <input type="number" inputMode="decimal" autoFocus value={manualDrive.distance} onChange={e=>setManualDrive(m=>({...m,distance:e.target.value}))} onFocus={e=>e.target.select()}
+                      placeholder="例: 25" style={{ flex:1, padding:"8px 10px", borderRadius:10, border:"1px solid #DDE8F8", fontSize:16, fontWeight:700, textAlign:"right", fontFamily:"inherit", boxSizing:"border-box" }} />
+                    <span style={{ fontSize:13, color:"#4A6090" }}>km</span>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <span style={{ fontSize:12, color:"#4A6090", width:64 }}>走行時間</span>
+                    <input type="number" inputMode="numeric" value={manualDrive.durationMin} onChange={e=>setManualDrive(m=>({...m,durationMin:e.target.value}))} onFocus={e=>e.target.select()}
+                      placeholder="任意" style={{ flex:1, padding:"8px 10px", borderRadius:10, border:"1px solid #DDE8F8", fontSize:14, textAlign:"right", fontFamily:"inherit", boxSizing:"border-box" }} />
+                    <span style={{ fontSize:13, color:"#4A6090" }}>分</span>
+                  </div>
+                  <input value={manualDrive.memo} onChange={e=>setManualDrive(m=>({...m,memo:e.target.value}))}
+                    placeholder="📍 目的地・メモ（任意）" style={{ width:"100%", padding:"8px 10px", borderRadius:10, border:"1px solid #DDE8F8", fontSize:13, boxSizing:"border-box", fontFamily:"inherit" }} />
+                  {(()=>{ const v=parseFloat(manualDrive.distance); const ok=!isNaN(v)&&v>0; const isLong=ok&&v>=ldThreshold;
+                    return (
+                      <>
+                        {ok && (
+                          <div style={{ fontSize:12, textAlign:"center", color: isLong?"#C04040":"#88A8CC", fontWeight:isLong?700:400 }}>
+                            {isLong ? `🔴 ${ldThreshold}km超え（ロングドライブ）` : `${ldThreshold}km未満`}
+                          </div>
+                        )}
+                        <div style={{ display:"flex", gap:8 }}>
+                          <button onClick={()=>{ setShowManualDrive(false); }}
+                            style={{ flex:1, padding:"12px", background:"#E0E8F8", border:"none", borderRadius:10, fontSize:13, cursor:"pointer", color:"#4060A0" }}>キャンセル</button>
+                          <button disabled={!ok} onClick={()=>{
+                              const dist = Math.round(v * 100) / 100;
+                              setLongDriveRecords(prev => [...prev, {
+                                id: Date.now(), date: manualDrive.date || today,
+                                distance: dist, isLongDrive: dist >= ldThreshold,
+                                departure: null, arrival: null,
+                                durationMin: manualDrive.durationMin ? Number(manualDrive.durationMin) : null,
+                                memo: manualDrive.memo || "", manual: true,
+                              }]);
+                              setShowManualDrive(false);
+                            }}
+                            style={{ flex:2, padding:"12px", background: ok?"#2348b8":"#B0C0D8", border:"none", borderRadius:10, fontSize:14, cursor: ok?"pointer":"not-allowed", color:"#fff", fontWeight:700 }}>記録する</button>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
           </div>
 
           {ldResult && (
