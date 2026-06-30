@@ -18,6 +18,9 @@
     input, select, button { font-family: inherit; }
     input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
     ::-webkit-scrollbar { display: none; }
+    @keyframes ldPop { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes ldDrive { 0% { transform: translateX(0); } 50% { transform: translateX(4px); } 100% { transform: translateX(0); } }
+    @keyframes ldGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(192,64,64,0.0); } 50% { box-shadow: 0 0 0 6px rgba(192,64,64,0.12); } }
   </style>
 </head>
 <body>
@@ -148,6 +151,16 @@ function haversineKm(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.asin(Math.sqrt(a));
 }
 
+function driveTier(km, threshold) {
+  if (km >= 100)            return { emoji:"🚀", label:"ロングドライブ皇帝", color:"#8000C0" };
+  if (km >= 50)             return { emoji:"🏆", label:"ロングドライブ王",   color:"#C04040" };
+  if (km >= 30)             return { emoji:"🏔️", label:"大遠征",            color:"#C04040" };
+  if (km >= threshold)      return { emoji:"🎉", label:"ロングドライブ達成！", color:"#C04040" };
+  if (km >= threshold*0.7)  return { emoji:"🔥", label:"あと少しでロング！",  color:"#E08020" };
+  if (km >= threshold*0.4)  return { emoji:"🚗", label:"ちょいドラ",         color:"#2348b8" };
+  return { emoji:"🚶", label:"ご近所", color:"#88A8CC" };
+}
+
 function App() {
   const [page, setPage]           = useState("expenses");
   const [fixed, setFixed]         = useState(() => lsGet(SK.fixed, DEFAULT_FIXED));
@@ -228,6 +241,8 @@ function App() {
   const [ldOpenMonths,  setLdOpenMonths]  = useState(null);
   const [showManualDrive, setShowManualDrive] = useState(false);
   const [manualDrive,     setManualDrive]     = useState({ date:"", distance:"", durationMin:"", memo:"" });
+  const [ldLive,          setLdLive]          = useState(null);
+  const [ldLiveLoading,   setLdLiveLoading]   = useState(false);
   const [ldThreshold,   setLdThreshold]   = useState(() => lsGet(SK.ldThreshold, 12));
   const [ldThreshEdit,  setLdThreshEdit]  = useState(false);
   const [ldThreshInput, setLdThreshInput] = useState("");
@@ -2287,8 +2302,26 @@ function App() {
       )
     );
 
+    const handleLivePeek = async () => {
+      if (!ldDeparture) return;
+      setLdLiveLoading(true); setLdError(null);
+      try {
+        const pos = await getGPS();
+        const dist = Math.round(haversineKm(ldDeparture.lat, ldDeparture.lng, pos.lat, pos.lng) * 100) / 100;
+        const wasLong = ldLive && ldLive.distance >= ldThreshold;
+        const isLong = dist >= ldThreshold;
+        setLdLive({ distance: dist, at: Date.now() });
+        if (isLong && !wasLong && navigator.vibrate) navigator.vibrate([60, 40, 120]);
+      } catch (e) {
+        setLdError("GPS取得に失敗しました。");
+      } finally {
+        setLdLiveLoading(false);
+      }
+    };
+
     const handleDepart = async () => {
       setLdStatus("locating"); setLdError(null);
+      setLdLive(null);
       try {
         const pos = await getGPS();
         setLdDeparture({ ...pos, time: new Date().toLocaleTimeString(), timestamp: Date.now() });
@@ -2313,6 +2346,7 @@ function App() {
         setLdResult(result);
         setLdMemoInput("");
         setLdStatus("complete");
+        if (navigator.vibrate) navigator.vibrate(isLongDrive ? [80, 50, 80, 50, 160] : 60);
         setLongDriveRecords(prev => [...prev, {
           id: newId, date: today,
           distance: result.distance, isLongDrive,
@@ -2321,6 +2355,7 @@ function App() {
           durationMin, memo: "",
         }]);
         setLdDeparture(null);
+        setLdLive(null);
       } catch (e) {
         setLdError("GPS取得に失敗しました。");
         setLdStatus("error");
@@ -2431,6 +2466,43 @@ function App() {
             </button>
           </div>
 
+          {/* ===== 計測中のライブ距離（あそび心） ===== */}
+          {ldStatus === "measuring" && ldDeparture && (() => {
+            const km = ldLive ? ldLive.distance : 0;
+            const tier = driveTier(km, ldThreshold);
+            const pct = Math.min(km / ldThreshold, 1);
+            const reached = km >= ldThreshold;
+            return (
+              <div style={{ background:"#fff", borderRadius:16, border:`2px solid ${reached ? "#C04040" : "#DDE8F8"}`, padding:"18px 16px", marginBottom:16, textAlign:"center",
+                animation: reached ? "ldGlow 1.6s ease-in-out infinite" : "none" }}>
+                <div style={{ fontSize:11, color:"#88A8CC", letterSpacing:"0.1em", marginBottom:6 }}>出発地からの直線距離</div>
+                {ldLive ? (
+                  <>
+                    <div key={ldLive.at} style={{ fontSize:40, fontWeight:800, color:tier.color, lineHeight:1, animation:"ldPop 0.4s ease-out" }}>
+                      {km}<span style={{ fontSize:16, fontWeight:700, marginLeft:3 }}>km</span>
+                    </div>
+                    <div style={{ fontSize:15, fontWeight:700, color:tier.color, marginTop:8 }}>
+                      <span style={{ display:"inline-block", animation: reached ? "ldPop 0.5s ease-out" : "ldDrive 1.2s ease-in-out infinite" }}>{tier.emoji}</span> {tier.label}
+                    </div>
+                    {!reached && (
+                      <div style={{ fontSize:12, color:"#88A8CC", marginTop:6 }}>ロング判定まで あと <strong style={{ color:"#2348b8" }}>{Math.max(0, Math.round((ldThreshold - km) * 10) / 10)}km</strong></div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ fontSize:13, color:"#B0C4E0", padding:"6px 0" }}>下のボタンで今の距離をチェック 📡</div>
+                )}
+                <div style={{ marginTop:12, height:8, background:"#EEF3FF", borderRadius:5, overflow:"hidden" }}>
+                  <div style={{ height:"100%", borderRadius:5, width:`${pct*100}%`, transition:"width 0.5s ease", background: reached ? "#C04040" : "linear-gradient(90deg,#9CC0F0,#2348b8)" }} />
+                </div>
+                <button onClick={handleLivePeek} disabled={ldLiveLoading}
+                  style={{ marginTop:14, width:"100%", padding:"12px", borderRadius:12, border:"none", cursor: ldLiveLoading?"wait":"pointer", fontSize:14, fontWeight:700,
+                    background: ldLiveLoading ? "#C8D8F0" : "#2348b8", color:"#fff" }}>
+                  {ldLiveLoading ? "GPS取得中…" : ldLive ? "📡 もう一度チェック" : "📡 いま何km?"}
+                </button>
+              </div>
+            );
+          })()}
+
           {/* ===== 事後に記録（GPS不要・距離手入力） ===== */}
           <div style={{ marginBottom:16 }}>
             {!showManualDrive ? (
@@ -2494,10 +2566,14 @@ function App() {
             )}
           </div>
 
-          {ldResult && (
+          {ldResult && (() => {
+            const rTier = driveTier(ldResult.distance, ldThreshold);
+            return (
             <div style={{ background:"#fff", borderRadius:16, border:`2px solid ${ldResult.isLongDrive ? "#C04040" : "#2A8A40"}`, padding:"20px 16px", marginBottom:16, textAlign:"center" }}>
+              <div style={{ fontSize:40, marginBottom:4, animation:"ldPop 0.5s ease-out" }}>{rTier.emoji}</div>
               <div style={{ fontSize:12, color:"#88A8CC", marginBottom:4 }}>直線距離</div>
               <div style={{ fontSize:32, fontWeight:700, color:"#1A2840", marginBottom:8 }}>{ldResult.distance} km</div>
+              <div style={{ fontSize:15, fontWeight:700, color:rTier.color, marginBottom:6 }}>{rTier.label}</div>
               {ldResult.isLongDrive
                 ? <div style={{ fontSize:14, fontWeight:700, color:"#C04040" }}>🔴 {ldThreshold}km超え！記録しました</div>
                 : <div style={{ fontSize:13, color:"#88A8CC" }}>{ldThreshold}km未満 記録しました</div>
@@ -2518,7 +2594,8 @@ function App() {
                 style={{ width:"100%", marginTop:12, padding:"8px 12px", borderRadius:10,
                   border:"1px solid #DDE8F8", fontSize:13, boxSizing:"border-box", textAlign:"center" }} />
             </div>
-          )}
+            );
+          })()}
 
           {ldError && (
             <div style={{ background:"#FEF0F0", borderRadius:12, padding:"12px 16px", marginBottom:16, color:"#C04040", fontSize:13 }}>
