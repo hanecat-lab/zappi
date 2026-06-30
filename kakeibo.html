@@ -152,18 +152,18 @@ function haversineKm(lat1, lon1, lat2, lon2) {
 }
 
 const DRIVE_TIERS = [
-  { min: 0,    emoji:"🚶", label:"ご近所",            color:"#88A8CC" },
-  { min: 6,    emoji:"🚗", label:"ちょいドラ",        color:"#2348b8" },
-  { min: 10.5, emoji:"🔥", label:"ノってきた！",      color:"#E08020" },
-  { min: 15,   emoji:"🎉", label:"ナイスドライブ！",  color:"#C04040" },
-  { min: 20,   emoji:"🚙", label:"プチ遠征",          color:"#C04040" },
-  { min: 25,   emoji:"🛣️", label:"快走ドライバー",     color:"#C04040" },
-  { min: 30,   emoji:"🏔️", label:"大遠征",            color:"#C04040" },
-  { min: 35,   emoji:"🌄", label:"ロング巡航",        color:"#C04040" },
-  { min: 40,   emoji:"🦅", label:"ロングドライブ名人", color:"#C04040" },
-  { min: 45,   emoji:"⚡", label:"爆走トラベラー",     color:"#C04040" },
-  { min: 50,   emoji:"🏆", label:"ロングドライブ王",   color:"#C04040" },
-  { min: 100,  emoji:"🚀", label:"ロングドライブ皇帝", color:"#8000C0" },
+  { min: 0,    emoji:"🚶‍♂️", label:"ご近所ドライバー",     color:"#88A8CC" },
+  { min: 6,    emoji:"🚗", label:"ちょいドラ",          color:"#2348b8" },
+  { min: 10.5, emoji:"🧭", label:"そろそろ遠出の予感！", color:"#E08020" },
+  { min: 15,   emoji:"🎉", label:"街乗りランナー",       color:"#C04040" },
+  { min: 20,   emoji:"🚙", label:"遠征のルーキー",       color:"#C04040" },
+  { min: 25,   emoji:"🛣️", label:"快速の仕事人",         color:"#C04040" },
+  { min: 30,   emoji:"🏔️", label:"街道のベテラン",       color:"#C04040" },
+  { min: 35,   emoji:"🌌", label:"鉄腕クルーザー",       color:"#C04040" },
+  { min: 40,   emoji:"🦅", label:"無双のドライブ名人",   color:"#C04040" },
+  { min: 45,   emoji:"⚡", label:"韋駄天トラベラー",     color:"#C04040" },
+  { min: 50,   emoji:"🏆", label:"ロングドライブの覇者", color:"#C04040" },
+  { min: 100,  emoji:"🚀", label:"ドライブの神（ゴッド）", color:"#8000C0" },
 ];
 function driveTier(km) {
   let t = DRIVE_TIERS[0];
