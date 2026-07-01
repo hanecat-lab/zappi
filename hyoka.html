@@ -977,19 +977,6 @@
   </div>
 </div>
 
-<!-- DETAIL MODAL -->
-<div class="modal-overlay" id="detail-modal" onclick="bgCloseDetail(event)">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">
-      <span id="detail-store-name">詳細</span>
-      <button class="modal-close" onclick="closeDetail()">✕</button>
-    </div>
-    <div id="detail-content"></div>
-    <button class="edit-btn" onclick="editFromDetail()">編集する</button>
-  </div>
-</div>
-
 <!-- EPISODE MODAL -->
 <div class="modal-overlay" id="episode-modal" onclick="bgCloseEpisode(event)">
   <div class="modal-sheet">
@@ -1183,6 +1170,14 @@ function setStoreLoc(name, pref, city, town) {
   saveStoreLocs(m);
 }
 function isLocCat(cat) { return LOC_CATS.includes(cat || formCat); }
+// 保存済みの店舗場所を記録フォームの場所メモへ自動補完（未入力時のみ）
+function applyStoreLoc(name) {
+  var loc = getStoreLoc(name);
+  var el = document.getElementById('f-location');
+  if (!el || !loc) return;
+  var s = (loc.pref||'') + (loc.city||'') + (loc.town||'');
+  if (s && !el.value.trim()) el.value = s;
+}
 
 const SMKEY = 'hyoka_store_memo_v1';
 const SUKEY = 'hyoka_store_url_v1';
@@ -1403,7 +1398,6 @@ function restoreBackup(index) {
 let currentCat  = 'all';
 let currentSort = 'date';
 let editId  = null;
-let viewId  = null;
 let formCat = '';
 let formCospa = '';
 function selectCospa(val) {
@@ -1472,14 +1466,6 @@ function renderList() {
   }).join('');
 }
 
-function mr(label, val) {
-  return `<div class="mini-rating">
-    <span class="mini-rating-label">${label}</span>
-    <div class="mini-bar"><div class="mini-bar-fill" style="width:${val}%"></div></div>
-    <span class="mini-score">${val}</span>
-  </div>`;
-}
-
 function toggleMemo(id, ev) {
   ev.stopPropagation();
   const memo = document.getElementById('memo-' + id);
@@ -1504,10 +1490,6 @@ function toggleCastMemo(castKey, ev) {
   if (!el) return;
   const open = el.classList.toggle('open');
   icon.textContent = open ? '▼' : '▶';
-}
-
-function catClass(cat) {
-  return cat === 'デリ' ? 'cat-deli' : cat === 'ソープ' ? 'cat-soap' : 'cat-hako';
 }
 
 function esc(s) {
@@ -1554,6 +1536,8 @@ var currentTagFilter = [];
 var tagGroupOpen = {};
 var diaryLpTimer = null;
 var diaryLongPressFired = false;
+var storeUrlLpTimer = null;
+var storeUrlLongPressFired = false;
 
 function onSearchInput() {
   currentSearch = toHira(document.getElementById('search-input').value.trim().toLowerCase());
@@ -1702,16 +1686,16 @@ function renderCasts() {
     return '<div class="cast-card' + (c.favorite ? ' fav-card' : '') + '" data-castkey="' + esc(castKey) + '" style="cursor:pointer">'
       + '<div class="cast-card-header">'
       + '<div>'
-      + '<span class="cast-name-main">' + (c.castName || '（名前なし）') + '</span>'
+      + '<span class="cast-name-main">' + (c.castName ? esc(c.castName) : '（名前なし）') + '</span>'
       + (c.kissCount ? '<span style="font-size:14px;margin-left:5px" title="キスあり">💋</span>' : '')
-      + '<span style="margin-left:8px;font-size:11px;border:1px solid ' + col + ';color:' + col + ';border-radius:8px;padding:1px 7px;">' + c.category + '</span>'
+      + '<span style="margin-left:8px;font-size:11px;border:1px solid ' + col + ';color:' + col + ';border-radius:8px;padding:1px 7px;">' + esc(c.category) + '</span>'
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:8px">'
       + '<button class="fav-btn" data-favkey="' + esc(castKey) + '" style="font-size:1rem;padding:6px 8px;">' + (c.favorite ? '★' : '☆') + '</button>'
       + '<span class="cast-count-badge">' + c.count + '回</span>'
       + '</div>'
       + '</div>'
-      + '<div class="cast-store">🏪 ' + (c.storeName || '（店名なし）') + '</div>'
+      + '<div class="cast-store">🏪 ' + (c.storeName ? esc(c.storeName) : '（店名なし）') + '</div>'
       + '<div class="cast-stats">'
       + '<div class="cast-stat">最終指名日：<span>' + c.lastDate + '</span>'
       + (function(){
@@ -1729,7 +1713,7 @@ function renderCasts() {
       + '<div class="cast-rating-item">また会いたい度 <span style="color:var(--gold)">' + starsStr(c.wantToMeetAgain) + '</span> <span>' + c.wantToMeetAgain + '</span></div>'
       + '</div>'
       + (c.nextMemo ? '<div class="cast-memo-wrap">'
-        + '<button class="memo-toggle" onclick="toggleCastMemo(\'' + esc(castKey) + '\',event)">'
+        + '<button class="memo-toggle" onclick="toggleCastMemo(\'' + esc(castKey).replace(/'/g,"\\'") + '\',event)">'
         + '<span class="memo-toggle-icon" id="cm-icon-' + safeKey + '">▶</span> 次回メモ'
         + '</button>'
         + '<div class="cast-memo" id="cm-' + safeKey + '">' + esc(c.nextMemo) + '</div>'
@@ -1802,16 +1786,6 @@ function renderCasts() {
   container.ontouchcancel = cancelDiaryLp;
   container.ontouchmove = cancelDiaryLp;
 }
-function filterCat(btn, cat) {
-  document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  currentCat = cat;
-  if (currentView === 'casts') renderCasts();
-  else if (currentView === 'stores') renderStores();
-  else if (currentView === 'stats') renderStats();
-  else renderList();
-}
-
 function setSort(btn, sort) {
   document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -1820,8 +1794,6 @@ function setSort(btn, sort) {
 }
 
 // ===== FORM =====
-const RATINGS = ['understanding','initiative','security','atmosphere','appearance','compatibility'];
-
 function openAddForm() {
   editId  = null;
   formCat = '';
@@ -1833,8 +1805,6 @@ function openAddForm() {
   document.getElementById('f-amount').value = '';
   document.getElementById('f-course').value = '';
   document.getElementById('f-episode').value = '';
-  var cm = document.getElementById('f-cast-memo');
-  if (cm) cm.value = '';
   formCospa = '';
   document.querySelectorAll('.cospa-btn').forEach(function(b) { b.classList.remove('active'); });
   document.getElementById('f-kiss').checked = false;
@@ -1858,14 +1828,11 @@ function openEditForm(id) {
   document.getElementById('f-amount').value = e.amount || '';
   document.getElementById('f-course').value = e.course || '';
   document.getElementById('f-episode').value = e.episode || '';
-  var cm = document.getElementById('f-cast-memo');
-  if (cm) cm.value = e.memo || '';
   formCospa = e.cospa || '';
   document.querySelectorAll('.cospa-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.cospa === formCospa); });
   document.getElementById('f-kiss').checked = e.kiss || false;
   selectCat(e.category);
   document.getElementById('delete-btn').style.display = 'block';
-  closeDetail();
   document.getElementById('form-modal').classList.add('open');
 }
 
@@ -2081,67 +2048,6 @@ function deleteEntry() {
   renderList();
 }
 
-// ===== DETAIL =====
-function openDetail(id) {
-  viewId = id;
-  const e = load().find(x => x.id === id);
-  if (!e) return;
-
-  const dist = e.gps ? fmtDist(haversine(myGPS, e.gps)) : null;
-  const col = catColor(e.category);
-
-  document.getElementById('detail-store-name').innerHTML =
-    `<span class="entry-cat-badge" style="font-size:.7rem;margin-right:6px;background:${hexToRgba(col,0.16)};color:${col}">${esc(e.category)}</span>${esc(e.storeName||'店名未入力')}`;
-
-  document.getElementById('detail-content').innerHTML = `
-    <div class="detail-info-row">
-      <span class="detail-info-label">お気に入り</span>
-      <button class="fav-btn fav-btn-lg" onclick="toggleFavFromDetail('${e.id}')" id="detail-fav-btn">${e.favorite ? '★ 登録済み' : '☆ 登録する'}</button>
-    </div>
-    <div class="detail-info-row">
-      <span class="detail-info-label">日付</span>
-      <span class="detail-info-value">${esc(e.date||'')}</span>
-    </div>
-    <div class="detail-info-row">
-      <span class="detail-info-label">指名キャスト</span>
-      <span class="detail-info-value">${esc(e.castName||'未入力')}</span>
-    </div>
-    <div class="detail-info-row">
-      <span class="detail-info-label">金額</span>
-      <span class="detail-info-value" style="color:var(--gold)">¥${Number(e.amount||0).toLocaleString()}</span>
-    </div>
-    <div class="detail-info-row">
-      <span class="detail-info-label">コース</span>
-      <span class="detail-info-value">${esc(e.course||'未入力')}</span>
-    </div>
-    ${e.cospa ? `<div class="detail-info-row">
-      <span class="detail-info-label">コスパ</span>
-      <span class="detail-info-value">${esc(e.cospa)}</span>
-    </div>` : ''}
-    <div class="detail-info-row">
-      <span class="detail-info-label">場所メモ</span>
-      <span class="detail-info-value">${esc(e.locationMemo||'未入力')}</span>
-    </div>
-    ${e.gps ? `<div class="detail-info-row">
-      <span class="detail-info-label">GPS</span>
-      <a class="detail-info-value map-link" href="https://maps.google.com/?q=${e.gps.lat},${e.gps.lng}" target="_blank">📍 地図で開く</a>
-    </div>` : ''}
-    ${dist ? `<div class="detail-info-row">
-      <span class="detail-info-label">現在地から</span>
-      <span class="detail-info-value">${dist}</span>
-    </div>` : ''}
-    ${e.memo ? `<div class="section-label" style="margin-top:14px">一言メモ</div><div class="detail-memo">${esc(e.memo)}</div>` : ''}
-    ${e.episode ? `<div class="section-label" style="margin-top:14px">エピソード</div><div class="detail-memo" style="border-color:rgba(255,61,240,0.25);box-shadow:0 0 8px rgba(255,61,240,0.08)">${esc(e.episode)}</div>` : ''}
-    ${e.kiss ? '<div style="margin-top:10px;font-size:.9rem">💋 <span style="color:var(--neon-pink)">キスあり</span></div>' : ''}
-  `;
-
-  document.getElementById('detail-modal').classList.add('open');
-}
-
-function closeDetail() { document.getElementById('detail-modal').classList.remove('open'); }
-function bgCloseDetail(e) { if (e.target.id === 'detail-modal') closeDetail(); }
-function editFromDetail() { openEditForm(viewId); }
-
 // ===== SETTINGS =====
 function openSettings() {
   renderCatManager();
@@ -2331,9 +2237,9 @@ function importData(ev) {
       }
       if (data.storeMemos && typeof data.storeMemos === 'object') {
         saveStoreMemos(data.storeMemos);
-        if (data.storeUrls) saveStoreUrls(data.storeUrls);
-        if (data.storeWatchlist) saveWatchlist(data.storeWatchlist);
       }
+      if (data.storeUrls) saveStoreUrls(data.storeUrls);
+      if (data.storeWatchlist) saveWatchlist(data.storeWatchlist);
       if (data.castRatings && typeof data.castRatings === 'object') {
         saveCastRatings(data.castRatings);
       }
@@ -2416,14 +2322,6 @@ function deleteCategory(name) {
 
 
 // ===== FAVORITES =====
-function toggleCastFav(castKey) {
-  var ratings = loadCastRatings();
-  if (!ratings[castKey]) ratings[castKey] = {};
-  ratings[castKey].favorite = !ratings[castKey].favorite;
-  saveCastRatings(ratings);
-  renderCasts();
-}
-
 function toggleFav(id, ev) {
   ev.stopPropagation();
   const list = load();
@@ -2433,17 +2331,6 @@ function toggleFav(id, ev) {
   save(list);
   renderList();
 }
-function toggleFavFromDetail(id) {
-  const list = load();
-  const e = list.find(x => x.id === id);
-  if (!e) return;
-  e.favorite = !e.favorite;
-  save(list);
-  const btn = document.getElementById('detail-fav-btn');
-  if (btn) btn.textContent = e.favorite ? '★ 登録済み' : '☆ 登録する';
-  renderList();
-}
-
 // ===== STORE VIEW =====
 let currentStoreSort = 'lastDate';
 
@@ -2565,9 +2452,7 @@ function renderStores() {
       + '</div>';
   }).join('');
 
-  var storeUrlLpTimer = null;
-  var storeUrlLongPressFired = false;
-  container.addEventListener('touchstart', function(ev) {
+  container.ontouchstart = function(ev) {
     var btn = ev.target.closest('[data-storeurlname]');
     if (!btn) return;
     storeUrlLongPressFired = false;
@@ -2582,12 +2467,12 @@ function renderStores() {
       saveStoreUrls(urls);
       renderStores();
     }, 500);
-  }, { passive: true });
+  };
   function cancelStoreUrlLp() { if (storeUrlLpTimer) { clearTimeout(storeUrlLpTimer); storeUrlLpTimer = null; } }
-  container.addEventListener('touchend', cancelStoreUrlLp);
-  container.addEventListener('touchcancel', cancelStoreUrlLp);
-  container.addEventListener('touchmove', cancelStoreUrlLp);
-  container.addEventListener('click', function(ev) {
+  container.ontouchend = cancelStoreUrlLp;
+  container.ontouchcancel = cancelStoreUrlLp;
+  container.ontouchmove = cancelStoreUrlLp;
+  container.onclick = function(ev) {
     var btn = ev.target.closest('[data-storeurlname]');
     if (!btn) return;
     if (storeUrlLongPressFired) { storeUrlLongPressFired = false; ev.stopPropagation(); return; }
@@ -2606,7 +2491,7 @@ function renderStores() {
       saveStoreUrls(urls);
       renderStores();
     }
-  });
+  };
 }
 
 
