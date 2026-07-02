@@ -25,10 +25,10 @@
 </head>
 <body>
 <div id="root"></div>
-<!-- v22 -->
+<!-- v23 -->
 <script type="text/babel">
 const { useState, useMemo, useEffect, useRef } = React;
-const APP_VERSION = 22;
+const APP_VERSION = 23;
 
 const SK = {
   fixed:      "kb_fixed",
@@ -49,7 +49,6 @@ const SK = {
   fuelRecords:      "kb_fuel_records",
   longDriveRecords: "kb_long_drive_records",
   ldDeparture:      "kb_ld_departure",
-  ldThreshold:      "kb_ld_threshold",
 };
 
 const DEFAULT_EXP_CATS = [
@@ -125,6 +124,9 @@ const yen = n => "¥" + Number(Math.round(n)).toLocaleString("ja-JP");
 const lsGet = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
 const lsSet = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
+// 単調増加のID採番（同一ミリ秒でも衝突しない）
+const genId = (() => { let last = 0; return () => { let t = Date.now(); if (t <= last) t = last + 1; last = t; return t; }; })();
+
 function DateButton({ day, monthNum, year, onChange }) {
   const ref = React.useRef(null);
   const pad = n => String(n).padStart(2,'0');
@@ -198,8 +200,13 @@ function App() {
   const [showAddExp, setShowAddExp] = useState(false);
   const [newExp,    setNewExp]    = useState({ date: todayStr(), name:"", amount:"", type:"cash", catId:1 });
   const [editExpCatId, setEditExpCatId] = useState(null);
+  const [editExpId,    setEditExpId]    = useState(null);
+  const [editExp,      setEditExp]      = useState(null);
   const [showAllExp,   setShowAllExp]   = useState(false);
   const [showCatTotals, setShowCatTotals] = useState(false);
+  const [openHistIdx,  setOpenHistIdx]  = useState(null);
+  const [fuelFrom,  setFuelFrom]  = useState("expenses");
+  const [driveFrom, setDriveFrom] = useState("expenses");
   const [expCats,   setExpCats]   = useState(() => lsGet(SK.expCats, DEFAULT_EXP_CATS));
   const [editCatId, setEditCatId] = useState(null);
   const [editCatName, setEditCatName] = useState("");
@@ -264,7 +271,6 @@ function App() {
   const [ldRouteDest,     setLdRouteDest]     = useState(null);
   const [ldRouteInput,    setLdRouteInput]    = useState("");
   const [ldRouteLoading,  setLdRouteLoading]  = useState(false);
-  const [showRouteMode,   setShowRouteMode]   = useState(false);
   const ldThreshold = 15; // 判定距離は固定（変更不可）— ロング達成の基準をブレさせないため
   const [analysisMonth, setAnalysisMonth] = useState(null);
   const [odoMode,      setOdoMode]      = useState("diff");
@@ -311,23 +317,33 @@ function App() {
     if (saved && saved.savedAt) { setAutoSaveData(saved); setShowRestorePrompt(true); }
   }, []);
 
-  // 起動時に最新バージョンを確認し、古ければキャッシュを回避して自動更新
+  // 起動時＆バックグラウンド復帰時に最新バージョンを確認し、古ければキャッシュを回避して自動更新
   useEffect(() => {
-    fetch('ver.txt?t=' + Date.now(), { cache: 'no-store' })
-      .then(r => r.ok ? r.text() : null)
-      .then(t => {
-        const n = parseInt(t);
-        if (n && n > APP_VERSION && sessionStorage.getItem('vreload') !== String(n)) {
-          sessionStorage.setItem('vreload', String(n));
-          location.replace(location.pathname + '?v=' + n);
-        }
-      })
-      .catch(() => {});
+    let lastCheck = 0;
+    function checkUpdate() {
+      const now = Date.now();
+      if (now - lastCheck < 5 * 60 * 1000) return; // 5分以内の再チェックはスキップ
+      lastCheck = now;
+      fetch('ver.txt?t=' + now, { cache: 'no-store' })
+        .then(r => r.ok ? r.text() : null)
+        .then(t => {
+          const n = parseInt(t);
+          if (n && n > APP_VERSION && sessionStorage.getItem('vreload') !== String(n)) {
+            sessionStorage.setItem('vreload', String(n));
+            location.replace(location.pathname + '?v=' + n);
+          }
+        })
+        .catch(() => {});
+    }
+    checkUpdate();
+    function onVisible() { if (!document.hidden) checkUpdate(); }
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
   useEffect(() => {
-    autoSaveRef.current = { fixed, history, current, occMaster, expCats, bonusHist, salaryHist, allowances, plannedEvents, provisionals, carryovers, fuelRecords, longDriveRecords, ldThreshold };
-  }, [fixed, history, current, occMaster, expCats, bonusHist, salaryHist, allowances, plannedEvents, provisionals, carryovers, fuelRecords, longDriveRecords, ldThreshold]);
+    autoSaveRef.current = { fixed, history, current, occMaster, expCats, bonusHist, salaryHist, allowances, plannedEvents, provisionals, carryovers, fuelRecords, longDriveRecords, includePlanned };
+  }, [fixed, history, current, occMaster, expCats, bonusHist, salaryHist, allowances, plannedEvents, provisionals, carryovers, fuelRecords, longDriveRecords, includePlanned]);
 
   useEffect(() => {
     function save() {
@@ -337,7 +353,8 @@ function App() {
         [SK.occMaster]:d.occMaster,[SK.expCats]:d.expCats,[SK.bonusHist]:d.bonusHist,
         [SK.salary]:d.salaryHist,[SK.allowances]:d.allowances,[SK.plannedEvents]:d.plannedEvents,
         [SK.provisionals]:d.provisionals,[SK.carryovers]:d.carryovers,
-        [SK.fuelRecords]:d.fuelRecords,[SK.longDriveRecords]:d.longDriveRecords,[SK.ldThreshold]:d.ldThreshold,
+        [SK.fuelRecords]:d.fuelRecords,[SK.longDriveRecords]:d.longDriveRecords,
+        [SK.includePlanned]:d.includePlanned,
         savedAt: new Date().toISOString(),
       });
     }
@@ -356,7 +373,6 @@ function App() {
   useEffect(() => lsSet(SK.fuelRecords,      fuelRecords),      [fuelRecords]);
   useEffect(() => lsSet(SK.longDriveRecords, longDriveRecords), [longDriveRecords]);
   useEffect(() => lsSet(SK.ldDeparture,      ldDeparture),      [ldDeparture]);
-  useEffect(() => lsSet(SK.ldThreshold,      ldThreshold),      [ldThreshold]);
 
   const varItems      = current.varItems  || DEFAULT_VAR_ITEMS;
   const expenses      = current.expenses  || [];
@@ -396,10 +412,15 @@ function App() {
       closedAt: new Date().toISOString(),
     };
     setHistory(prev => [rec, ...prev]);
-    const next = new Date();
-    next.setMonth(next.getMonth() + 1);
+    // 翌月は家計簿の月ラベルから導出（実時刻ベースだと締め遅れで月が飛ぶ/重複する）
+    const cm = current.month.match(/(\d+)年(\d+)月/);
+    const cy = cm ? Number(cm[1]) : new Date().getFullYear();
+    const cn = cm ? Number(cm[2]) : new Date().getMonth() + 1;
+    const nextY = cn === 12 ? cy + 1 : cy;
+    const nextM = cn === 12 ? 1 : cn + 1;
     const nextVarItems = varItems.map(v => ({ ...v, amount: 0 }));
-    setCurrent({ ...DEFAULT_CURRENT, month: `${next.getFullYear()}年${next.getMonth()+1}月`, varItems: nextVarItems, bonusIncome: 0, bonusItems: [] });
+    setCurrent({ ...DEFAULT_CURRENT, month: `${nextY}年${nextM}月`, income: current.income, varItems: nextVarItems, bonusIncome: 0, bonusItems: [] });
+    setProvisionals(ps => ps.map(p => ({ ...p, spent: 0 })));
     setShowClose(false);
   }
 
@@ -424,7 +445,7 @@ function App() {
 
   function addVarItem() {
     if (!newVarName.trim()) return;
-    const item = { id: Date.now(), name: newVarName.trim(), amount: 0 };
+    const item = { id: genId(), name: newVarName.trim(), amount: 0 };
     setCurrent(c => ({...c, varItems: [...(c.varItems||[]), item]}));
     setNewVarName("");
     setShowAddVar(false);
@@ -432,7 +453,7 @@ function App() {
 
   function addExpense() {
     if (!newExp.name || !newExp.amount) return;
-    const item = { id: Date.now(), date: newExp.date, name: newExp.name, amount: Number(newExp.amount)||0, type: newExp.type, catId: newExp.catId };
+    const item = { id: genId(), date: newExp.date, name: newExp.name, amount: Number(newExp.amount)||0, type: newExp.type, catId: newExp.catId };
     setCurrent(c => ({...c, expenses: [...(c.expenses||[]), item]}));
     setNewExp({ date: todayStr(), name:"", amount:"", type: newExp.type, catId: newExp.catId });
     setShowAddExp(false);
@@ -446,12 +467,13 @@ function App() {
 
   function addCat() {
     if (!newCatName.trim()) return;
-    setExpCats(prev => [...prev, { id: Date.now(), name: newCatName.trim() }]);
+    setExpCats(prev => [...prev, { id: genId(), name: newCatName.trim() }]);
     setNewCatName("");
     setShowAddCat(false);
   }
 
   function deleteExpense(id) {
+    if (!window.confirm("この出費を削除しますか？")) return;
     setCurrent(c => ({...c, expenses: (c.expenses||[]).filter(e => e.id !== id)}));
   }
   function toggleExpenseType(id) {
@@ -468,14 +490,14 @@ function App() {
 
   function addOccasional() {
     if (!occInput.name || !occInput.amount) return;
-    const item = { id: Date.now(), name: occInput.name, amount: Number(occInput.amount)||0 };
+    const item = { id: genId(), name: occInput.name, amount: Number(occInput.amount)||0 };
     setCurrent(c => ({...c, occasionals: [...(c.occasionals||[]), item]}));
     setOccInput({ name:"", amount:"" });
     setShowOcc(false);
   }
 
   function addToThisMonth(master) {
-    const item = { id: Date.now(), name: master.name, amount: master.amount };
+    const item = { id: genId(), name: master.name, amount: master.amount };
     setCurrent(c => ({...c, occasionals: [...(c.occasionals||[]), item]}));
   }
 
@@ -485,7 +507,7 @@ function App() {
 
   function addOccMaster() {
     if (!newOcc.name) return;
-    const item = { id: Date.now(), name: newOcc.name, amount: Number(newOcc.amount)||0, note: newOcc.note };
+    const item = { id: genId(), name: newOcc.name, amount: Number(newOcc.amount)||0, note: newOcc.note };
     setOccMaster(prev => [...prev, item]);
     setNewOcc({ name:"", amount:"", note:"" });
     setShowAddOcc(false);
@@ -507,7 +529,7 @@ function App() {
       [SK.carryovers]:       carryovers,
       [SK.fuelRecords]:      fuelRecords,
       [SK.longDriveRecords]: longDriveRecords,
-      [SK.ldThreshold]:      ldThreshold,
+      [SK.includePlanned]:   includePlanned,
       exportedAt: now,
     };
     lsSet(SK.autoSave, { ...data, savedAt: now });
@@ -537,6 +559,7 @@ function App() {
     if (data[SK.carryovers])    setCarryovers(data[SK.carryovers]);
     if (data[SK.fuelRecords])      setFuelRecords(data[SK.fuelRecords]);
     if (data[SK.longDriveRecords]) setLongDriveRecords(data[SK.longDriveRecords]);
+    if (data[SK.includePlanned] != null) setIncludePlanned(data[SK.includePlanned]);
     setShowRestorePrompt(false);
   }
 
@@ -566,6 +589,7 @@ function App() {
         if (data[SK.carryovers])    setCarryovers(data[SK.carryovers]);
         if (data[SK.fuelRecords])      setFuelRecords(data[SK.fuelRecords]);
         if (data[SK.longDriveRecords]) setLongDriveRecords(data[SK.longDriveRecords]);
+        if (data[SK.includePlanned] != null) setIncludePlanned(data[SK.includePlanned]);
         setShowData(false);
         setShowFuelData(false);
         alert("バックアップを読み込みました");
@@ -658,6 +682,27 @@ function App() {
                     {h.occasionals && h.occasionals.length > 0 && (
                       <div style={{ marginTop:4, fontSize:11, color:"#88A8CC" }}>臨時: {h.occasionals.map(o=>o.name).join("・")}</div>
                     )}
+                    {h.expenses && h.expenses.length > 0 && (
+                      <>
+                        <button onClick={()=>setOpenHistIdx(openHistIdx===i?null:i)}
+                          style={{ width:"100%", marginTop:8, padding:"7px", background:"#EEF3FF", border:"none", borderRadius:8, color:"#3B6FCC", fontSize:11, fontWeight:600, cursor:"pointer" }}>
+                          {openHistIdx===i ? "▲ 出費明細を閉じる" : `▼ 出費明細を見る（${h.expenses.length}件）`}
+                        </button>
+                        {openHistIdx===i && (
+                          <div style={{ marginTop:8, borderTop:"1px solid #EEF3FF", paddingTop:6 }}>
+                            {h.expenses.map((ex,j) => (
+                              <div key={j} style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 0", borderBottom:"1px solid #F4F8FF", fontSize:12 }}>
+                                <span style={{ color:"#88A8CC", minWidth:34, flexShrink:0 }}>{ex.date}</span>
+                                <span style={{ flex:1, minWidth:0, color:"#1A2840", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ex.name}</span>
+                                <span style={{ fontSize:10, color:"#88A8CC", flexShrink:0 }}>{(expCats.find(c=>c.id===ex.catId)||{name:"未分類"}).name}</span>
+                                <span style={{ fontSize:9, color: ex.type==="cash" ? "#3A5CA8" : "#A03060", flexShrink:0 }}>{ex.type==="cash"?"現金":"CR"}</span>
+                                <span style={{ fontWeight:700, flexShrink:0 }}>{maskY(yen(Number(ex.amount)||0))}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -674,7 +719,7 @@ function App() {
 
     function saveBonusToHistory() {
       const entry = {
-        id: Date.now(),
+        id: genId(),
         year: Number(saveBonusYear),
         bonusMonth: Number(saveBonusMonth),
         income: bonusInc,
@@ -696,7 +741,7 @@ function App() {
       if (!newBonusHist.income) return;
       const inc = Number(newBonusHist.income) || 0;
       const entry = {
-        id: Date.now(),
+        id: genId(),
         year: Number(newBonusHist.year),
         bonusMonth: Number(newBonusHist.bonusMonth),
         income: inc,
@@ -764,7 +809,7 @@ function App() {
                     <button onClick={()=>{setShowAddBonus(false);setNewBonusName("");setNewBonusAmount("");}} style={{ flex:1,padding:"11px",background:"#E0E8F8",border:"none",borderRadius:10,fontSize:14,cursor:"pointer",color:"#4060A0" }}>キャンセル</button>
                     <button onClick={()=>{
                       if (!newBonusName.trim() || !newBonusAmount) return;
-                      const item = { id:Date.now(), name:newBonusName.trim(), amount:Number(newBonusAmount)||0 };
+                      const item = { id:genId(), name:newBonusName.trim(), amount:Number(newBonusAmount)||0 };
                       setCurrent(c=>({...c,bonusItems:[...(c.bonusItems||[]),item]}));
                       setNewBonusName(""); setNewBonusAmount(""); setShowAddBonus(false);
                     }} style={{ flex:2,padding:"11px",background:"#1C3561",border:"none",borderRadius:10,fontSize:14,cursor:"pointer",color:"#fff",fontWeight:700 }}>追加</button>
@@ -1046,7 +1091,7 @@ function App() {
               <button onClick={()=>setShowData(true)} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, padding:"6px 10px", color:"#D8EEFF", fontSize:16, cursor:"pointer" }}>⚙️</button>
             </div>
             <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-              <button onClick={()=>setPage("fuel")} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, padding:"6px 10px", color:"#D8EEFF", fontSize:16, cursor:"pointer" }}>🚗</button>
+              <button onClick={()=>{ setFuelFrom("expenses"); setPage("fuel"); }} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, padding:"6px 10px", color:"#D8EEFF", fontSize:16, cursor:"pointer" }}>🚗</button>
             </div>
           </div>
         } />
@@ -1065,7 +1110,7 @@ function App() {
                   </div>
                 </div>
                 <div style={{ display:"flex", gap:8 }}>
-                  <button onClick={()=>{ setLdResult(null); setLdError(null); setLdEditId(null); setPage("longDrive"); }}
+                  <button onClick={()=>{ setLdResult(null); setLdError(null); setLdEditId(null); setDriveFrom("expenses"); setPage("longDrive"); }}
                     style={{ flex:1, padding:"11px", background:"#C04040", border:"none", borderRadius:10, color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer" }}>🏁 到着を記録</button>
                   <button onClick={()=>{ if(window.confirm("この計測を破棄しますか？")){ setLdDeparture(null); setLdStatus("idle"); } }}
                     style={{ padding:"11px 14px", background:"#fff", border:"1px solid #E0C080", borderRadius:10, color:"#A06000", fontSize:13, cursor:"pointer" }}>やめる</button>
@@ -1091,7 +1136,7 @@ function App() {
             const driveMonthLabel = new Date().toISOString().slice(0,7);
             const driveThisMonth = longDriveRecords.filter(r => r.date && r.date.slice(0,7) === driveMonthLabel).length;
             return (
-              <button onClick={()=>{ setLdResult(null); setLdError(null); setLdEditId(null); setPage("longDrive"); }}
+              <button onClick={()=>{ setLdResult(null); setLdError(null); setLdEditId(null); setDriveFrom("expenses"); setPage("longDrive"); }}
                 style={{ width:"100%", marginBottom:12, ...card, padding:"9px 14px", display:"flex", alignItems:"center", gap:8, cursor:"pointer", textAlign:"left" }}>
                 <span style={{ fontSize:16, flexShrink:0 }}>🚗💨</span>
                 <span style={{ flex:1, fontSize:12, color:"#4A6090" }}>今月のドライブ</span>
@@ -1156,6 +1201,29 @@ function App() {
             <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
               {(showAllExp ? filtered : filtered.slice(0,4)).map(e => (
                 <div key={e.id} style={{ background:"#fff", borderRadius:14, padding:"12px 14px", boxShadow:"0 1px 6px rgba(30,60,180,0.06)", border:"1px solid #DDE8F8" }}>
+                  {editExpId === e.id && editExp ? (
+                    <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <DateButton day={parseInt((editExp.date||"").split("/")[1]) || new Date().getDate()}
+                          monthNum={parseInt((editExp.date||"").split("/")[0]) || expMonthNum} year={expYear}
+                          onChange={(m,d) => setEditExp(x => ({...x, date:`${m}/${d}`}))} />
+                        <input value={editExp.name} onChange={ev=>setEditExp(x=>({...x,name:ev.target.value}))}
+                          placeholder="使ったもの" style={{ flex:1, minWidth:0, padding:"7px 10px", borderRadius:8, border:"1px solid #C5D5EE", fontSize:13, outline:"none", fontFamily:"inherit" }} />
+                      </div>
+                      <input type="number" inputMode="numeric" value={editExp.amount} onChange={ev=>setEditExp(x=>({...x,amount:ev.target.value}))} onFocus={ev=>ev.target.select()}
+                        placeholder="金額" style={{ width:"100%", padding:"7px 10px", borderRadius:8, border:"1px solid #C5D5EE", fontSize:14, fontWeight:700, outline:"none", boxSizing:"border-box", fontFamily:"inherit" }} />
+                      <div style={{ display:"flex", justifyContent:"flex-end", gap:8 }}>
+                        <button onClick={()=>{ setEditExpId(null); setEditExp(null); }}
+                          style={{ padding:"7px 14px", background:"#E0E8F8", border:"none", borderRadius:8, fontSize:12, cursor:"pointer", color:"#4060A0" }}>キャンセル</button>
+                        <button onClick={()=>{
+                            if (!editExp.name.trim() || !(Number(editExp.amount) > 0)) return;
+                            setCurrent(c => ({...c, expenses: (c.expenses||[]).map(x => x.id === e.id ? {...x, name: editExp.name.trim(), amount: Number(editExp.amount), date: editExp.date} : x)}));
+                            setEditExpId(null); setEditExp(null);
+                          }}
+                          style={{ padding:"7px 18px", background:"#1C3561", border:"none", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer", color:"#fff" }}>保存</button>
+                      </div>
+                    </div>
+                  ) : (
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                     <div style={{ fontSize:12, color:"#88A8CC", minWidth:32, flexShrink:0 }}>{e.date}</div>
                     <div style={{ flex:1, minWidth:0 }}>
@@ -1163,6 +1231,8 @@ function App() {
                       <button onClick={()=>setEditExpCatId(editExpCatId===e.id?null:e.id)} style={{ fontSize:10, marginTop:2, color: catColor(e.catId), fontWeight:600, background:"none", border:"none", padding:0, cursor:"pointer" }}>{catName(e.catId)} ✎</button>
                     </div>
                     <div style={{ fontWeight:700, fontSize:14, flexShrink:0 }}>{maskE(yen(e.amount))}</div>
+                    <button onClick={()=>{ setEditExpId(e.id); setEditExp({ name:e.name, amount:String(e.amount), date:e.date }); setEditExpCatId(null); }}
+                      style={{ background:"#EEF2FF", border:"none", borderRadius:6, width:26, height:26, cursor:"pointer", fontSize:12, color:"#3A5CA8", flexShrink:0 }}>✎</button>
                     <button onClick={()=>toggleExpenseType(e.id)} style={{
                       fontSize:10, padding:"3px 8px", borderRadius:10, flexShrink:0,
                       background: e.type==="cash" ? "#EEF2FF" : "#FFF0F4",
@@ -1171,7 +1241,8 @@ function App() {
                     }}>{e.type==="cash" ? "現金" : "CR"}</button>
                     <button onClick={()=>deleteExpense(e.id)} style={{ background:"#FEF0F0",border:"none",borderRadius:6,width:26,height:26,cursor:"pointer",fontSize:12,color:"#C84040",flexShrink:0 }}>×</button>
                   </div>
-                  {editExpCatId===e.id && (
+                  )}
+                  {editExpId !== e.id && editExpCatId===e.id && (
                     <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginTop:10, paddingTop:10, borderTop:"1px solid #EEF3FF" }}>
                       {expCats.map(c => (
                         <button key={c.id} onClick={()=>setExpenseCat(e.id, c.id)} style={{
@@ -1241,6 +1312,7 @@ function App() {
                 }} style={{ fontSize:10, color:"#88A8CC", background:"none", border:"1px solid #C5D5EE", borderRadius:6, padding:"2px 8px", cursor:"pointer" }}>月末精算</button>
               )}
             </div>
+            <div style={{ fontSize:10, color:"#B0C0D8", marginTop:-4, marginBottom:8 }}>予算を残高から先取りで確保。実出費を記録すると枠から消化されます</div>
             {provisionals.length > 0 && (
               <div style={{ display:"flex", flexDirection:"column", gap:4, marginBottom:8 }}>
                 {provisionals.map(p => {
@@ -1272,7 +1344,7 @@ function App() {
                             {!p.catId && (
                               <button onClick={()=>{setEditProvId(p.id);setEditProvSpent(String(p.spent||""));}} style={{ background:"#EEF2FF", border:"none", borderRadius:6, padding:"3px 8px", fontSize:11, color:"#3A5CA8", cursor:"pointer" }}>記入</button>
                             )}
-                            <button onClick={()=>setProvisionals(ps=>ps.filter(x=>x.id!==p.id))} style={{ background:"#FEF0F0", border:"none", borderRadius:6, width:22, height:22, cursor:"pointer", fontSize:11, color:"#C84040" }}>×</button>
+                            <button onClick={()=>{ if(!window.confirm(`「${p.name}」を削除しますか？`)) return; setProvisionals(ps=>ps.filter(x=>x.id!==p.id)); }} style={{ background:"#FEF0F0", border:"none", borderRadius:6, width:22, height:22, cursor:"pointer", fontSize:11, color:"#C84040" }}>×</button>
                           </>
                         )}
                       </div>
@@ -1312,7 +1384,7 @@ function App() {
                   <button onClick={()=>{setShowAddProv(false);setNewProv({name:"",budget:"",catId:null});}} style={{ flex:1,padding:"9px",background:"#E0E8F8",border:"none",borderRadius:10,fontSize:13,cursor:"pointer",color:"#4060A0" }}>キャンセル</button>
                   <button onClick={()=>{
                     if (!newProv.name.trim()||!newProv.budget) return;
-                    setProvisionals(ps=>[...ps,{id:Date.now(),name:newProv.name.trim(),budget:Number(newProv.budget)||0,catId:newProv.catId,spent:0}]);
+                    setProvisionals(ps=>[...ps,{id:genId(),name:newProv.name.trim(),budget:Number(newProv.budget)||0,catId:newProv.catId,spent:0}]);
                     setNewProv({name:"",budget:"",catId:null});
                     setShowAddProv(false);
                   }} style={{ flex:2,padding:"9px",background:"#1C3561",border:"none",borderRadius:10,fontSize:13,cursor:"pointer",color:"#fff",fontWeight:700 }}>追加</button>
@@ -1323,7 +1395,7 @@ function App() {
                 <button onClick={()=>setShowAddProv(true)} style={{ flex:1,padding:"8px",background:"transparent",border:"1.5px dashed #A8C0EC",borderRadius:8,color:"#3B6FCC",fontSize:12,cursor:"pointer",fontWeight:600 }}>＋ 予算枠を追加</button>
                 {plannedEvents.length>0 && (
                   <button onClick={()=>{
-                    const toMove = plannedEvents.map(ev=>({id:Date.now()+Math.random(),name:ev.name,budget:Number(ev.amount)||0,catId:null,spent:0}));
+                    const toMove = plannedEvents.map(ev=>({id:genId(),name:ev.name,budget:Number(ev.amount)||0,catId:null,spent:0}));
                     setProvisionals(ps=>[...ps,...toMove]);
                     setPlannedEvents([]);
                   }} style={{ padding:"8px 10px",background:"#EEF2FF",border:"1px solid #B0C4F0",borderRadius:8,color:"#3A5CA8",fontSize:11,cursor:"pointer",fontWeight:600 }}>イベント予定→仮枠</button>
@@ -1350,12 +1422,12 @@ function App() {
                     <button onClick={()=>{
                       const otherCat = expCats.find(x=>x.name==="その他");
                       setCurrent(cur=>({...cur, expenses:[...(cur.expenses||[]), {
-                        id: Date.now(), date: todayStr(), name: c.name,
+                        id: genId(), date: todayStr(), name: c.name,
                         amount: Number(c.amount)||0, type:"cash", catId: otherCat ? otherCat.id : null,
                       }]}));
                       setCarryovers(cs=>cs.filter(x=>x.id!==c.id));
                     }} style={{ background:"#1C3561", border:"none", borderRadius:8, padding:"5px 10px", color:"#fff", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>出費へ</button>
-                    <button onClick={()=>setCarryovers(cs=>cs.filter(x=>x.id!==c.id))} style={{ background:"#FEF0F0", border:"none", borderRadius:6, width:22, height:22, cursor:"pointer", fontSize:11, color:"#C84040", flexShrink:0 }}>×</button>
+                    <button onClick={()=>{ if(!window.confirm(`「${c.name}」を削除しますか？`)) return; setCarryovers(cs=>cs.filter(x=>x.id!==c.id)); }} style={{ background:"#FEF0F0", border:"none", borderRadius:6, width:22, height:22, cursor:"pointer", fontSize:11, color:"#C84040", flexShrink:0 }}>×</button>
                   </div>
                 ))}
                 <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"#5070A0", paddingTop:4, fontWeight:700 }}>
@@ -1388,7 +1460,7 @@ function App() {
                   <button onClick={()=>{setShowAddCarry(false);setNewCarry({name:"",amount:"",memo:""});}} style={{ flex:1,padding:"9px",background:"#E0E8F8",border:"none",borderRadius:10,fontSize:13,cursor:"pointer",color:"#4060A0" }}>キャンセル</button>
                   <button onClick={()=>{
                     if (!newCarry.name.trim()||!newCarry.amount) return;
-                    setCarryovers(cs=>[...cs,{id:Date.now(),name:newCarry.name.trim(),amount:Number(newCarry.amount)||0,memo:newCarry.memo.trim()}]);
+                    setCarryovers(cs=>[...cs,{id:genId(),name:newCarry.name.trim(),amount:Number(newCarry.amount)||0,memo:newCarry.memo.trim()}]);
                     setNewCarry({name:"",amount:"",memo:""});
                     setShowAddCarry(false);
                   }} style={{ flex:2,padding:"9px",background:"#1C3561",border:"none",borderRadius:10,fontSize:13,cursor:"pointer",color:"#fff",fontWeight:700 }}>追加</button>
@@ -1417,13 +1489,14 @@ function App() {
                 </button>
               </div>
             </div>
+            <div style={{ fontSize:10, color:"#B0C0D8", marginTop:-4, marginBottom:8 }}>支払いが決まっている予定。トグルONで残高から差し引きます</div>
             {plannedEvents.length > 0 && (
               <div style={{ display:"flex", flexDirection:"column", gap:2, marginBottom:8 }}>
                 {plannedEvents.map(ev => (
                   <div key={ev.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #EEF3FF" }}>
                     <span style={{ flex:1, fontSize:13 }}>{ev.name}</span>
                     <span style={{ fontWeight:700, fontSize:13 }}>{maskE(yen(Number(ev.amount)||0))}</span>
-                    <button onClick={()=>setPlannedEvents(p=>p.filter(x=>x.id!==ev.id))} style={{ background:"#FEF0F0", border:"none", borderRadius:6, width:24, height:24, cursor:"pointer", fontSize:11, color:"#C84040" }}>×</button>
+                    <button onClick={()=>{ if(!window.confirm(`「${ev.name}」を削除しますか？`)) return; setPlannedEvents(p=>p.filter(x=>x.id!==ev.id)); }} style={{ background:"#FEF0F0", border:"none", borderRadius:6, width:24, height:24, cursor:"pointer", fontSize:11, color:"#C84040" }}>×</button>
                   </div>
                 ))}
                 {includePlanned && plannedTotal > 0 && (
@@ -1444,7 +1517,7 @@ function App() {
                   <button onClick={()=>{setShowAddPlanned(false);setNewPlanned({name:"",amount:""});}} style={{ flex:1,padding:"9px",background:"#E0E8F8",border:"none",borderRadius:10,fontSize:13,cursor:"pointer",color:"#4060A0" }}>キャンセル</button>
                   <button onClick={()=>{
                     if (!newPlanned.name.trim()) return;
-                    setPlannedEvents(p=>[...p,{id:Date.now(),name:newPlanned.name.trim(),amount:Number(newPlanned.amount)||0}]);
+                    setPlannedEvents(p=>[...p,{id:genId(),name:newPlanned.name.trim(),amount:Number(newPlanned.amount)||0}]);
                     setNewPlanned({name:"",amount:""});
                     setShowAddPlanned(false);
                   }} style={{ flex:2,padding:"9px",background:"#1C3561",border:"none",borderRadius:10,fontSize:13,cursor:"pointer",color:"#fff",fontWeight:700 }}>追加</button>
@@ -1631,7 +1704,7 @@ function App() {
                 <button onClick={()=>{setShowAddSalary(false);setNewSalary({date:"",amount:"",note:""});}} style={{ flex:1,padding:"13px",background:"#E0E8F8",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#4060A0" }}>キャンセル</button>
                 <button onClick={()=>{
                   if(!newSalary.amount) return;
-                  setSalaryHist(p=>[...p,{id:Date.now(),date:newSalary.date,amount:Number(newSalary.amount),note:newSalary.note}]);
+                  setSalaryHist(p=>[...p,{id:genId(),date:newSalary.date,amount:Number(newSalary.amount),note:newSalary.note}]);
                   setNewSalary({date:"",amount:"",note:""});
                   setShowAddSalary(false);
                 }} style={{ flex:2,padding:"13px",background:"#1C3561",border:"none",borderRadius:12,fontSize:14,cursor:"pointer",color:"#fff",fontWeight:700 }}>追加</button>
@@ -1677,6 +1750,8 @@ function App() {
       <div style={{ minHeight:"100vh", background:"#EEF3FF", paddingBottom:40 }}>
         <SubHeader title="支出分析" sub="ANALYSIS" onBack={() => setPage("expenses")} />
         <div style={{ maxWidth:480, margin:"0 auto", padding:"16px" }}>
+
+          <div style={{ fontSize:10, color:"#A0B0C8", marginBottom:10 }}>※ 出費（現金＋CR）のみを集計。固定費・変動支出・臨時は含みません</div>
 
           {/* A. カテゴリ別 横棒グラフ（選択月） */}
           <div style={{ ...card, marginBottom:12 }}>
@@ -1857,7 +1932,7 @@ function App() {
         ? lastOdo + Number(newFuel.odometer)
         : Number(newFuel.odometer);
       setFuelRecords(p => [...p, {
-        id: Date.now(),
+        id: genId(),
         date: newFuel.date || today,
         odometer: actualOdo,
         liters,
@@ -1870,17 +1945,16 @@ function App() {
         const d = newFuel.date || today;
         const [, m, day] = d.split("-");
         const dateStr = Number(m) + "/" + Number(day);
-        const now = Date.now();
         let gasCat = expCats.find(c => c.name === "ガソリン");
         let fuelCatId;
         if (!gasCat) {
-          fuelCatId = now + 2;
+          fuelCatId = genId();
           setExpCats(prev => [...prev, { id: fuelCatId, name: "ガソリン" }]);
         } else {
           fuelCatId = gasCat.id;
         }
         setCurrent(c => ({...c, expenses: [...(c.expenses||[]), {
-          id: now + 1,
+          id: genId(),
           date: dateStr,
           name: "ガソリン",
           amount: Number(newFuel.amount),
@@ -1922,9 +1996,9 @@ function App() {
 
     return (
       <div style={{ minHeight:"100vh", background:"linear-gradient(180deg,#eef4ff,#f8fbff)", paddingBottom:80 }}>
-        <SubHeader title="燃費記録" sub="FUEL" onBack={() => setPage("expenses")} rightAction={
+        <SubHeader title="燃費記録" sub="FUEL" onBack={() => setPage(fuelFrom)} rightAction={
           <div style={{ display:"flex", gap:6 }}>
-            <button onClick={() => { setLdResult(null); setLdError(null); setLdEditId(null); setPage("longDrive"); }}
+            <button onClick={() => { setLdResult(null); setLdError(null); setLdEditId(null); setDriveFrom("fuel"); setPage("longDrive"); }}
               style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, padding:"6px 10px", color:"#D8EEFF", fontSize:16, cursor:"pointer" }}>🚕💨</button>
             <button onClick={()=>setShowFuelData(true)} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, padding:"6px 10px", color:"#D8EEFF", fontSize:16, cursor:"pointer" }}>⚙️</button>
           </div>
@@ -2399,7 +2473,7 @@ function App() {
       const durationMin = dep && dep.timestamp
         ? Math.round((endAt - dep.timestamp) / 60000)
         : null;
-      const newId = Date.now();
+      const newId = genId();
       setLongDriveRecords(prev => [...prev, {
         id: newId, date: today,
         distance: dist, isLongDrive,
@@ -2412,7 +2486,6 @@ function App() {
       if (navigator.vibrate) navigator.vibrate(isLongDrive ? [80, 50, 80, 50, 160] : 60);
       setLdRouteDest(null);
       setLdRouteInput("");
-      setShowRouteMode(false);
       setLdDeparture(null);
       setLdLive(null);
       setLdStatus("complete");
@@ -2426,7 +2499,6 @@ function App() {
         setLdDeparture({ ...pos, time: new Date().toLocaleTimeString(), timestamp: Date.now() });
         setLdStatus("measuring");
         setLdRouteDest(null); setLdRouteInput("");
-        setShowRouteMode(true); // 出発したら実ルートカードを開き「ルート距離を見る」を即表示
       } catch (e) {
         setLdError("GPS取得に失敗しました。位置情報を許可してください。");
         setLdStatus("error");
@@ -2442,7 +2514,7 @@ function App() {
         const durationMin = ldDeparture.timestamp
           ? Math.round((Date.now() - ldDeparture.timestamp) / 60000)
           : null;
-        const newId = Date.now();
+        const newId = genId();
         const result = { distance: Math.round(dist * 100) / 100, isLongDrive, durationMin, id: newId };
         setLdResult(result);
         setLdMemoInput("");
@@ -2474,7 +2546,7 @@ function App() {
 
     return (
       <div style={{ minHeight:"100vh", background:"linear-gradient(180deg,#eef4ff,#f8fbff)", paddingBottom:80 }}>
-        <SubHeader title="ドライブ記録" sub="DRIVE LOG" onBack={() => setPage("fuel")} rightAction={
+        <SubHeader title="ドライブ記録" sub="DRIVE LOG" onBack={() => setPage(driveFrom)} rightAction={
           <button onClick={()=>setPage("expenses")} style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, padding:"6px 12px", color:"#D8EEFF", fontSize:13, cursor:"pointer", whiteSpace:"nowrap" }}>出費へ →</button>
         } />
         <div style={{ maxWidth:480, margin:"0 auto", padding:"16px" }}>
@@ -2665,7 +2737,7 @@ function App() {
                           <button disabled={!ok} onClick={()=>{
                               const dist = Math.round(v * 100) / 100;
                               setLongDriveRecords(prev => [...prev, {
-                                id: Date.now(), date: manualDrive.date || today,
+                                id: genId(), date: manualDrive.date || today,
                                 distance: dist, isLongDrive: dist >= ldThreshold,
                                 departure: null, arrival: null,
                                 durationMin: manualDrive.durationMin ? Number(manualDrive.durationMin) : null,
@@ -2918,7 +2990,7 @@ function App() {
             </div>
             <div style={{ display:"flex",gap:5 }}>
               <NavBtn label="👕"  onClick={()=>setPage("salary")} />
-              <NavBtn label="🚗"  onClick={()=>setPage("fuel")} />
+              <NavBtn label="🚗"  onClick={()=>{ setFuelFrom("home"); setPage("fuel"); }} />
             </div>
           </div>
         </div>
